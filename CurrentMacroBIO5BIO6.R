@@ -31,10 +31,12 @@ macro_bio6 <- project(macro_bio6, x)
 plot(macro_bio6)
 
 writeRaster(macro_bio5,
-    filename = "E:/Input/CHELSAdata/BIO5BIO6/macroBIO5_forResampling.tif"
+    filename = "E:/Input/CHELSAdata/BIO5BIO6/macroBIO5_forResampling.tif",
+    overwrite = TRUE
 )
 writeRaster(macro_bio6,
-    filename = "E:/Input/CHELSAdata/BIO5BIO6/macroBIO6_forResampling.tif"
+    filename = "E:/Input/CHELSAdata/BIO5BIO6/macroBIO6_forResampling.tif",
+    overwrite = TRUE
 )
 
 # Resample data to 25 meter
@@ -44,3 +46,11 @@ bio5_resample
 writeRaster(bio5_resample,
     filename = "E:/Input/CHELSAdata/BIO5BIO6/macroBIO5_resampled_25m.tif"
 )
+
+# Calculate offset by substracting macroT from microT.
+microbio5 <- rast("E:/Input/ForestBioClim/ForestClim_05.tif")
+microbio5
+microbio6 <- rast("E:/Input/ForestBioClim/ForestClim_06.tif")
+microbio6
+plot(microbio5)
+plot(microbio6)
