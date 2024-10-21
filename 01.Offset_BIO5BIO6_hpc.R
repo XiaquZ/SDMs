@@ -1,4 +1,6 @@
 library(terra)
+library(tibble)
+library(ggplot2)
 
 # Load ForestClim BIO5 BIO6 2000-2020.
 microbio5 <- rast("/lustre1/scratch/348/vsc34871/input/ForestClim_05.tif")

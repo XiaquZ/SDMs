@@ -1,8 +1,10 @@
 library(terra)
 
 # Load chelsa macroclimate BIO5 and BIO6 data of current time.
-macro_bio5 <- rast("E:/Input/CHELSAdata/BIO5BIO6/CHELSA_bio5_1981-2010_V.2.1.tif")
-macro_bio6 <- rast("E:/Input/CHELSAdata/BIO5BIO6/CHELSA_bio6_1981-2010_V.2.1.tif")
+macro_bio5 <- rast(
+    "E:/Input/CHELSAdata/BIO5BIO6/1981-2010/archives/CHELSA_bio5_1981-2010_V.2.1.tif")
+macro_bio6 <- rast(
+    "E:/Input/CHELSAdata/BIO5BIO6/1981-2010/archives/CHELSA_bio6_1981-2010_V.2.1.tif")
 macro_bio5
 macro_bio6
 plot(macro_bio5)
@@ -39,18 +41,4 @@ writeRaster(macro_bio6,
     overwrite = TRUE
 )
 
-# Resample data to 25 meter
-x <- rast(template)
-bio5_resample <- resample(macro_bio5, x, method = "bilinear")
-bio5_resample
-writeRaster(bio5_resample,
-    filename = "E:/Input/CHELSAdata/BIO5BIO6/macroBIO5_resampled_25m.tif"
-)
-
-# Calculate offset by substracting macroT from microT.
-microbio5 <- rast("E:/Input/ForestBioClim/ForestClim_05.tif")
-microbio5
-microbio6 <- rast("E:/Input/ForestBioClim/ForestClim_06.tif")
-microbio6
-plot(microbio5)
-plot(microbio6)
+# Resample data to 25 meter on hpc. See Reampl_chelsaMacro_hpc.R
