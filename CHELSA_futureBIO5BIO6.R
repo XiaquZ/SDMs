@@ -5,14 +5,14 @@ paths <- read.delim2("E:/Input/CHELSAdata/futurebio5bio6chelsa.txt", header = F)
 
 # Download CHELSA BIO5 2070-2100
 pathsbio5 <- paths[grep("bio5", paths$V1), ]
-pathsbio5[1]
+pathsbio5[2]
 
 # Forloop
 rastlsbio5 <- list()
 for (i in 1:5) {
     rastlsbio5[[i]] <- rast(pathsbio5[i])
 }
-plot(rastlsbio5[[2]])
+plot(rastlsbio5[[3]])
 rastlsbio5 <- rast(rastlsbio5)
 
 # Crop to the study areas.
