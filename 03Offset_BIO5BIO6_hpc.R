@@ -15,14 +15,16 @@ plot(macrobio5)
 # Calculate the offset.
 offsetbio5 <- microbio5 - macrobio5
 offsetbio5
+offsetbio5 <- round(offsetbio5, digits = 1)
 writeRaster(offsetbio5,
-    filename = "/lustre1/scratch/348/vsc34871/output/OffsetBIO5_2000-2020.tif",
+    filename = "/lustre1/scratch/348/vsc34871/output/terraOffsetBIO5_2000-2020.tif",
     overwrite = TRUE
 )
 
 offsetbio6 <- microbio6 - macrobio6
 offsetbio6
+offsetbio6 <- round(offsetbio6, digits = 1)
 writeRaster(offsetbio6,
-    filename = "/lustre1/scratch/348/vsc34871/output/OffsetBIO6_2000-2020.tif",
+    filename = "/lustre1/scratch/348/vsc34871/output/terraOffsetBIO6_2000-2020.tif",
     overwrite = TRUE
 )
