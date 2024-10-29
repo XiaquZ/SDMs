@@ -33,6 +33,9 @@ hist(SampleOffsetbio5$terraMacroBIO5)
 reg1 <- lm(offsetBIO5 ~ terraMacroBIO5, data = SampleOffsetbio5)
 summary(reg1)
 
+# Save lm results.
+saveRDS(reg1, file = "I:/DATA/output/BIO5BIO6_lm/lm_offsetVSterraBIO5.rds")
+
 # Add the regression line
 ggplot(SampleOffsetbio5, aes(x = terraMacroBIO5, y = offsetBIO5)) +
   geom_point() +
@@ -52,11 +55,6 @@ ggplot(SampleOffsetbio5, aes(x = terraMacroBIO5, y = offsetBIO5)) +
     axis.title = element_text(size = 16),    # Adjust x and y axis title size
     axis.text = element_text(size = 16)      # Adjust x and y axis tick mark size
   )
-
-save(reg1,
-  file = "/lustre1/scratch/348/vsc34871/output/FutureMicroData/regression_macroCHELSA_VS_offset.RData"
-)
-
 
 #### Load offset and macroclimate data of BIO6.
 offsetbio6 <- rast("E:/Input/TerraClimate/terraOffsetBIO6_2000-2020.tif")
@@ -80,6 +78,9 @@ colnames(SampleOffsetbio6)[4] <- "terraMacroBIO6"
 ########################
 reg2 <- lm(offsetBIO6 ~ terraMacroBIO6, data = SampleOffsetbio6)
 summary(reg2)
+
+# Save lm results.
+saveRDS(reg2, file = "I:/DATA/output/BIO5BIO6_lm/lm_offsetVSterraBIO6.rds")
 
 # Add the regression line
 ggplot(SampleOffsetbio6, aes(x = terraMacroBIO6, y = offsetBIO6)) +
@@ -105,6 +106,7 @@ ggplot(SampleOffsetbio6, aes(x = terraMacroBIO6, y = offsetBIO6)) +
 hist(SampleOffset$offsetBIO6)
 hist(SampleOffset$chelsaBIO6)
 
+################################################
 #### compare microclimate with macroclimate.####
 microbio6 <- rast("E:/Input/ForestBioClim/ForestClim_06.tif")
 s <- c(microbio6, macrobio6)
