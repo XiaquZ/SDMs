@@ -8,12 +8,16 @@ library(ggpubr)
 ###########################
 
 # Load offset and macroclimate data of BIO5.
-offsetbio5 <- rast("E:/Input/TerraClimate/terraOffsetBIO5_2000-2020.tif")
-macrobio5 <- rast(
-  "E:/Input/TerraClimate/2000-2020terraBIO5_EUforests_25m.tif"
+offsetbio5 <- rast(
+  "E:/Output/BIO5BIO6/ForestClimTerraClimate_OffsetBIO5_2000-2020.tif"
 )
-plot(offsetbio5, main = "OffsetBIO5 1981-2010")
-plot(macrobio5, main = "Terra BIO5 1981-2010")
+macrobio5 <- rast(
+  "E:/Output/BIO5BIO6/2000-2020terraBIO5_EUforests_25m.tif"
+)
+offsetbio5
+macrobio5
+plot(offsetbio5, main = "OffsetBIO5 2000-2020")
+plot(macrobio5, main = "Terra BIO5 2000-2020")
 
 # Create sample data
 s <- c(offsetbio5, macrobio5)
@@ -51,18 +55,22 @@ ggplot(SampleOffsetbio5, aes(x = terraMacroBIO5, y = offsetBIO5)) +
     label.y = max(SampleOffsetbio5$offsetBIO5) - 0.7,
     size = 10
   ) +
-    theme(
-    axis.title = element_text(size = 16),    # Adjust x and y axis title size
-    axis.text = element_text(size = 16)      # Adjust x and y axis tick mark size
+  theme(
+    axis.title = element_text(size = 16), # Adjust x and y axis title size
+    axis.text = element_text(size = 16) # Adjust x and y axis tick mark size
   )
 
 #### Load offset and macroclimate data of BIO6.
-offsetbio6 <- rast("E:/Input/TerraClimate/terraOffsetBIO6_2000-2020.tif")
+offsetbio6 <- rast(
+  "E:/Output/BIO5BIO6/ForestClimTerraClimate_OffsetBIO6_2000-2020.tif"
+  )
 macrobio6 <- rast(
-  "E:/Input/TerraClimate/2000-2020terraBIO6_EUforests_25m.tif"
+  "E:/Output/BIO5BIO6/2000-2020terraBIO6_EUforests_25m.tif"
 )
 plot(offsetbio6, main = "OffsetBIO6 1981-2010")
 plot(macrobio6, main = " CHELSA BIO6 1981-2010")
+offsetbio6
+macrobio6
 
 # Create sample data
 sbio6 <- c(offsetbio6, macrobio6)
@@ -97,9 +105,9 @@ ggplot(SampleOffsetbio6, aes(x = terraMacroBIO6, y = offsetBIO6)) +
     label.y = max(SampleOffsetbio6$offsetBIO6) - 0.7,
     size = 10
   ) +
-    theme(
-    axis.title = element_text(size = 16),    # Adjust x and y axis title size
-    axis.text = element_text(size = 16)      # Adjust x and y axis tick mark size
+  theme(
+    axis.title = element_text(size = 16), # Adjust x and y axis title size
+    axis.text = element_text(size = 16) # Adjust x and y axis tick mark size
   )
 
 #### Check normal distribution####
@@ -136,9 +144,9 @@ ggplot(sample_micmacro, aes(x = macroBIO6, y = microBIO6)) +
     label.y = max(sample_micmacro$microBIO6) - 1.0,
     size = 10
   ) +
-    theme(
-    axis.title = element_text(size = 16),    # Adjust x and y axis title size
-    axis.text = element_text(size = 16)      # Adjust x and y axis tick mark size
+  theme(
+    axis.title = element_text(size = 16), # Adjust x and y axis title size
+    axis.text = element_text(size = 16) # Adjust x and y axis tick mark size
   )
 
 #### BIO5.
@@ -169,7 +177,7 @@ ggplot(sample_micmacro02, aes(x = macroBIO5, y = microBIO5)) +
     label.y = max(sample_micmacro02$microBIO5) - 1.0,
     size = 10
   ) +
-    theme(
-    axis.title = element_text(size = 16),    # Adjust x and y axis title size
-    axis.text = element_text(size = 16)      # Adjust x and y axis tick mark size
+  theme(
+    axis.title = element_text(size = 16), # Adjust x and y axis title size
+    axis.text = element_text(size = 16) # Adjust x and y axis tick mark size
   )
