@@ -37,7 +37,7 @@ offsetbio6_pre <- rast("E:/Input/TerraClimate/terraOffsetBIO6_2000-2020.tif")
 offsetbio5_fut <- slope5 * deltamacro5 + offsetbio5_pre
 offsetbio6_fut <- slope6 * deltamacro6 + offsetbio6_pre
 
-# Calculate the future microclimate bio5 and 6.
+#### Calculate the future microclimate bio5 and 6.
 # First, load the future macroclimate bio5 and 6.
 microbio5_fut <- macrobio5_fut + offsetbio5_fut
 microbio6_fut <- macrobio6_fut + offsetbio6_fut
