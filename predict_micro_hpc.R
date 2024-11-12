@@ -57,7 +57,6 @@ predict_maxent <- function(mdls, indx, i, name, tileB.tbl, covs.files){
     logistic_mdl <- logistic_mdl * 100
     logistic_mdl <- round(logistic_mdl, digits = 0)
     logistic[, r] <- logistic_mdl
-    
   }
   
   logistic <- rowMeans(logistic)
