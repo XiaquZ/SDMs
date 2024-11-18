@@ -7,6 +7,10 @@ bio15 <- rast("E:/Input/CHELSAdata/BIO12BIO15/2071-2100chelsaBIO15_EUforests_25m
 cec <- rast("E:/Input/SDMs_Soil variables/cec.tif")
 clay <- rast("E:/Input/SDMs_Soil variables/clay.tif")
 
+rastlist <- list.files(path = "E:/Output/BIO5BIO6/future", pattern='.tif$', all.files= T, full.names= T)
+stk <- terra::rast(rastlist)
+stk[[1]]
+
 #Read in data in sf format.
 c_shape <- read_sf("E:/EuropeShapefile/Shapefiles/Europe.shp") #change pathway if change to another country
 
@@ -20,5 +24,8 @@ plot(st_geometry(c_grid), border = "red", add = TRUE)
 c_grid_spat <- vect(c_grid)
 
 ## Making tiles:
+pred_n <- 6
+for(i in 1:pred_n){
 filename <- paste0("/lustre1/scratch/348/vsc34871/output/Tiles/FVoCC_50kmSR", "_.tif") #Change path
-tile <- makeTiles(FVoCC,c_grid_spat, filename, overwrite = TRUE)
+tile <- makeTiles(stk[[1]], c_grid_spat, filename, overwrite = TRUE)
+}

@@ -1,3 +1,4 @@
+library(terra)
 library(ENMeval)
 library(dplyr)
 library(enmSdmX)
@@ -24,73 +25,73 @@ library(enmSdmX)
 # )
 
 # load the shapefile to crop a small region
-bel <- vect("E:/EuropeShapefile/Shapefiles/Belgium.shp")
-print(bel)
+switz <- vect("E:/EuropeShapefile/Shapefiles/Switzerland.shp")
+plot(switz)
 
 # # Crop the predictors.
 # # BIO5
-# bio5_bel <- crop(bio5, bel)
-# plot(bio5_bel)
-# bio5_bel <- mask(bio5_bel, bel)
-# plot(bio5_bel)
-# writeRaster(bio5_bel,
-#  "E:/Output/SDM_test/bio5_belgium.tif",
+# bio5_switz <- crop(bio5, switz)
+# plot(bio5_switz)
+# bio5_switz <- mask(bio5_switz, switz)
+# plot(bio5_switz)
+# writeRaster(bio5_switz,
+#  "E:/Output/SDM_test/switzerland/bio5_switz.tif",
 #  overwrite = TRUE)
 
 # # BIO6
-# bio6_bel <- crop(bio6, bel)
-# plot(bio6_bel)
-# bio6_bel <- mask(bio6_bel, bel)
-# plot(bio6_bel)
-# writeRaster(bio6_bel,
-#  "E:/Output/SDM_test/bio6_belgium.tif",
+# bio6_switz <- crop(bio6, switz)
+# plot(bio6_switz)
+# bio6_switz <- mask(bio6_switz, switz)
+# plot(bio6_switz)
+# writeRaster(bio6_switz,
+#  "E:/Output/SDM_test/switzerland/bio6_switz.tif",
 #  overwrite = TRUE)
 
 # # BIO12
-# bio12_bel <- crop(bio12, bel)
-# plot(bio12_bel)
-# bio12_bel <- mask(bio12_bel, bel)
-# plot(bio12_bel)
-# writeRaster(bio12_bel,
-#  "E:/Output/SDM_test/bio12_belgium.tif",
+# bio12_switz <- crop(bio12, switz)
+# plot(bio12_switz)
+# bio12_switz <- mask(bio12_switz, switz)
+# plot(bio12_switz)
+# writeRaster(bio12_switz,
+#  "E:/Output/SDM_test/switzerland/bio12_switz.tif",
 #  overwrite = TRUE)
 
 # # BIO15
-# bio15_bel <- crop(bio15, bel)
-# plot(bio15_bel)
-# bio15_bel <- mask(bio15_bel, bel)
-# plot(bio15_bel)
-# writeRaster(bio15_bel,
-#  "E:/Output/SDM_test/bio15_belgium.tif",
+# bio15_switz <- crop(bio15, switz)
+# plot(bio15_switz)
+# bio15_switz <- mask(bio15_switz, switz)
+# plot(bio15_switz)
+# writeRaster(bio15_switz,
+#  "E:/Output/SDM_test/switzerland/bio15_switz.tif",
 #  overwrite = TRUE)
 
 # # Two soil variables.
 # # cation exchange capacity
-# cec_bel <- crop(cec, bel)
-# plot(cec_bel)
-# cec_bel <- mask(cec_bel, bel)
-# plot(cec_bel)
-# writeRaster(cec_bel,
-#     "E:/Output/SDM_test/cec_belgium.tif",
+# cec_switz <- crop(cec, switz)
+# plot(cec_switz)
+# cec_switz <- mask(cec_switz, switz)
+# plot(cec_switz)
+# writeRaster(cec_switz,
+#     "E:/Output/SDM_test/switzerland/cec_switz.tif",
 #     overwrite = TRUE
 # )
 
 # # soil clay content
-# clay_bel <- crop(clay, bel)
-# plot(clay_bel)
-# clay_bel <- mask(clay_bel, bel)
-# plot(clay_bel)
-# writeRaster(clay_bel,
-#  "E:/Output/SDM_test/clay_belgium.tif",
+# clay_switz <- crop(clay, switz)
+# plot(clay_switz)
+# clay_switz <- mask(clay_switz, switz)
+# plot(clay_switz)
+# writeRaster(clay_switz,
+#  "E:/Output/SDM_test/switzerland/clay_switz.tif",
 #  overwrite = TRUE)
 
 # Change the name of predictors.
-ForestClim_05 <- rast("E:/Output/SDM_test/bio5_belgium.tif")
-ForestClim_06 <- rast("E:/Output/SDM_test/bio6_belgium.tif")
-ForestClim_12 <- rast("E:/Output/SDM_test/bio12_belgium.tif")
-ForestClim_15 <- rast("E:/Output/SDM_test/bio15_belgium.tif")
-cec <- rast("E:/Output/SDM_test/cec_belgium.tif")
-clay <- rast("E:/Output/SDM_test/clay_belgium.tif")
+ForestClim_05 <- rast("E:/Output/SDM_test/switzerland/bio5_switz.tif")
+ForestClim_06 <- rast("E:/Output/SDM_test/switzerland/bio6_switz.tif")
+ForestClim_12 <- rast("E:/Output/SDM_test/switzerland/bio12_switz.tif")
+ForestClim_15 <- rast("E:/Output/SDM_test/switzerland/bio15_switz.tif")
+cec <- rast("E:/Output/SDM_test/switzerland/cec_switz.tif")
+clay <- rast("E:/Output/SDM_test/switzerland/clay_switz.tif")
 
 names(ForestClim_05) <- "ForestClim_05"
 names(ForestClim_06) <- "ForestClim_06"
@@ -111,11 +112,11 @@ print(predictors)
 # actaea spicata
 mdl <- load("E:/SDMs/Stef_SDMs/Models/Actaea spicata.RData")
 mdl <- e.mx_rp.f
-# Results inspection
-eval.results.partitions(mdl) %>% head()
-eval.models(mdl) %>% str(max.level = 1)
-eval.occs(mdl) %>% head()
-eval.results(mdl) |> head()
+# # Results inspection
+# eval.results.partitions(mdl) %>% head()
+# eval.models(mdl) %>% str(max.level = 1)
+# eval.occs(mdl) %>% head()
+# eval.results(mdl) |> head()
 
 # Select the best SDM based on delta AIC
 # This dplyr operation executes the sequential criteria explained above.
@@ -126,38 +127,54 @@ min_index <- which(res$delta.AICc == min(res$delta.AICc))
 mdl_select <- mdl@models[[min_index]]
 str(mdl_select)
 
-# actaea <- terra::predict(predictors, mdl_select, type = "logistic")
-# # Try another package
-# actaea <- predicts::predict(predictors, mdl_select, type = "logistic")
-# ?predicts::predict
-# ## The above two functions cannot run maxnet model.
-
 # Try predictMaxNet function.
-actaea02 <- predictMaxNet(mdl_select, predictors, type = "logistic")
-plot(actaea02)
+start_t <- Sys.time()
+actaea <- predictMaxNet(mdl_select, predictors, type = "logistic")
+end_t <- Sys.time()
+print(end_t - start_t)
+## Time difference of 4.285568 mins
+plot(actaea)
+?bioticVelocity
 
 # Compare with the current distribution map
 actaea_pre <- rast("E:/SDMs/Stef_SDMs/Maps_current/Actaea spicata.tif")
-actaea_pre <- crop(actaea_pre, bel)
-actaea_pre <- mask(actaea_pre, bel)
-actaea02 <- actaea02 * 100
+actaea_pre <- crop(actaea_pre, switz)
+actaea_pre <- mask(actaea_pre, switz)
+plot(actaea_pre)
+actaea_pre
+
+# Future prediction multiply by 100 
+actaea <- actaea * 100
+actaea
+
+# Try to calculate biotic velocity
+s <- c(actaea_pre, actaea)
+s
+start_t <- Sys.time()
+bv <- bioticVelocity(
+	x = s,
+	times = c(2010, 2085),
+	cores = 1
+)
+end_t <- Sys.time()
+print(end_t - start_t)
+
 # Plot the two maps.
 par(mfrow = c(1, 2))
 plot(actaea_pre, main = "Suitability map for Actaea Spicata 2000-2020")
-plot(actaea02, main = "Suitability map for Actaea Spicata 2071-2100")
+plot(actaea, main = "Suitability map for Actaea Spicata 2071-2100")
 par(mfrow = c(1, 1))
 # Save outputs
 writeRaster(
     actaea_pre,
-    "E:/Output/SDM_test/Actaea Spicata_2000-2020.tif",
+    "E:/Output/SDM_test/switzerland/Actaea Spicata_2000-2020_switz.tif",
     overwrite = TRUE
 )
 writeRaster(
-    actaea02,
-    "E:/Output/SDM_test/Actaea Spicata_2071-2100.tif",
+    actaea,
+    "E:/Output/SDM_test/switzerland/Actaea Spicata_2071-2100_switz.tif",
     overwrite = TRUE
 )
-?predictMaxNet
 
 # Test on another species
 mdl02 <- load("E:/SDMs/Stef_SDMs/Models/Adoxa moschatellina.RData")

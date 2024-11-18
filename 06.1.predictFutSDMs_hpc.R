@@ -25,16 +25,18 @@ predictors <- c(
 )
 print(predictors)
 
-# Test on another species
+# Load Stef's SDMs for prediction.
 mdl02 <- load("E:/SDMs/Stef_SDMs/Models/Adoxa moschatellina.RData")
 mdl02 <- e.mx_rp.f
 
 # Select the best SDM based on delta AIC
-# This dplyr operation executes the sequential criteria explained above.
 res <- eval.results(mdl02)
 opt_mdl <- res[res$delta.AICc == 0, ]
 opt_mdl
+
+#choose the best model with lowest AIC.
 min_index <- which(res$delta.AICc == 0)
+## What if the minimum delta.AICc is not 0?
 mdl_select <- mdl02@models[[min_index]]
 
 species02 <- predictMaxNet(mdl_select, predictors, type = "logistic")
