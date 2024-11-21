@@ -134,7 +134,7 @@ end_t <- Sys.time()
 print(end_t - start_t)
 ## Time difference of 4.285568 mins
 plot(actaea)
-?bioticVelocity
+
 
 # Compare with the current distribution map
 actaea_pre <- rast("E:/SDMs/Stef_SDMs/Maps_current/Actaea spicata.tif")
@@ -147,17 +147,17 @@ actaea_pre
 actaea <- actaea * 100
 actaea
 
-# Try to calculate biotic velocity
-s <- c(actaea_pre, actaea)
-s
-start_t <- Sys.time()
-bv <- bioticVelocity(
-	x = s,
-	times = c(2010, 2085),
-	cores = 1
-)
-end_t <- Sys.time()
-print(end_t - start_t)
+# # Try to calculate biotic velocity
+# s <- c(actaea_pre, actaea)
+# s
+# start_t <- Sys.time()
+# bv <- bioticVelocity(
+# 	x = s,
+# 	times = c(2010, 2085),
+# 	cores = 1
+# )
+# end_t <- Sys.time()
+# print(end_t - start_t)
 
 # Plot the two maps.
 par(mfrow = c(1, 2))
