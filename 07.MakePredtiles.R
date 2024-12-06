@@ -1,19 +1,7 @@
 library(terra)
 library(sf)
 
-# # Rename the bio12 bio15.
-# bio12 <- rast("E:/Output/SDM_test/belgium/Predictors/bio12_belgium.tif")
-# bio15 <- rast("E:/Output/SDM_test/belgium/Predictors/bio15_belgium.tif")
-# names(bio12) <- "CHELSAV2.1_bio12_25m"
-# writeRaster(bio12,
-#   "E:/Output/SDM_test/belgium/Predictors/bio12_belgium_rename.tif",
-#   overwrite = TRUE
-# )
-# names(bio15) <- "CHELSAV2.1_bio15_25m"
-# writeRaster(bio15,
-#   "E:/Output/SDM_test/belgium/Predictors/bio15_belgium_rename.tif",
-#   overwrite = TRUE
-# )
+
 # Read in shapefile in sf format.
 c_shape <- read_sf("E:/EuropeShapefile/Shapefiles/Belgium.shp")
 plot(c_shape)

@@ -1,7 +1,7 @@
 library(terra)
 
 # Read in the paths of all SDM tiles.
-out <- list.files("E:/Output/SDM_test/belgium/out/",
+out <- list.files("E:/Output/SDM_test/tiles/",
     pattern = ".tif", full.names = T
 )
 
@@ -20,3 +20,6 @@ for (species in species_names) {
      species, "_futSDM.tif")
     writeRaster(r, fout, overwrite = TRUE)
 }
+
+out.rast <- vrt(out)
+plot(out.rast)
