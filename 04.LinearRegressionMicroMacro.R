@@ -22,7 +22,7 @@ plot(macrobio5, main = "Terra BIO5 2000-2020")
 # Create sample data
 s <- c(offsetbio5, macrobio5)
 set.seed(123)
-SampleOffsetbio5 <- spatSample(s, 10^5, "regular", na.rm = TRUE, xy = TRUE)
+SampleOffsetbio5 <- spatSample(s, 10^6, "regular", na.rm = TRUE, xy = TRUE)
 head(SampleOffsetbio5)
 colnames(SampleOffsetbio5)[3] <- "offsetBIO5"
 colnames(SampleOffsetbio5)[4] <- "terraMacroBIO5"
@@ -76,7 +76,7 @@ macrobio6
 sbio6 <- c(offsetbio6, macrobio6)
 
 set.seed(23)
-SampleOffsetbio6 <- spatSample(sbio6, 10^5, "regular", na.rm = TRUE, xy = TRUE)
+SampleOffsetbio6 <- spatSample(sbio6, 10^6, "regular", na.rm = TRUE, xy = TRUE)
 head(SampleOffsetbio6)
 colnames(SampleOffsetbio6)[3] <- "offsetBIO6"
 colnames(SampleOffsetbio6)[4] <- "terraMacroBIO6"
@@ -121,7 +121,7 @@ s <- c(microbio6, macrobio6)
 
 # extract samples
 set.seed(123)
-sample_micmacro <- spatSample(s, 100000, "regular", na.rm = TRUE, xy = TRUE)
+sample_micmacro <- spatSample(s, 10^6, "regular", na.rm = TRUE, xy = TRUE)
 head(sample_micmacro)
 colnames(sample_micmacro)[3] <- "microBIO6"
 colnames(sample_micmacro)[4] <- "macroBIO6"
@@ -155,7 +155,7 @@ s <- c(microbio5, macrobio5)
 
 # extract samples
 set.seed(123)
-sample_micmacro02 <- spatSample(s, 100000, "regular", na.rm = TRUE, xy = TRUE)
+sample_micmacro02 <- spatSample(s, 10^6, "regular", na.rm = TRUE, xy = TRUE)
 head(sample_micmacro02)
 colnames(sample_micmacro02)[3] <- "microBIO5"
 colnames(sample_micmacro02)[4] <- "macroBIO5"

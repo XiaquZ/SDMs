@@ -1,3 +1,5 @@
+# TerraClimate data were downloaded from HPC in the end!
+# Check the terraclimate.slurm file.
 library(RNetCDF)
 
 # Enter lat and lon ranges

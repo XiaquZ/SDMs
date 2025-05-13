@@ -4,16 +4,17 @@ library(doParallel)
 library(terra)
 
 # Define paths
-input_dir <- "F:/Output/fut_SDMs/species_tiles/"
-output_dir <- "F:/Output/fut_SDMs/species_final/"
+input_dir <- "/lustre1/scratch/348/vsc34871/input/species_tiles/"
+output_dir <- "/lustre1/scratch/348/vsc34871/output/species_final/"
 
 # List species tiles
 species_tiles <- list.files(input_dir, full.names = TRUE)
 species_names <- unique(basename(species_tiles))
 
 # Set up parallel backend
-# For PC:
-cl <- makeCluster(detectCores() - 6)
+# For HPC:
+cl <- makeCluster(6)
+
 registerDoParallel(cl)
 
 # Parallel processing
@@ -54,5 +55,3 @@ stopCluster(cl)
 # Final message
 message("All species processed.")
 
-# test
-species <- "Brachypodium_sylvaticum" 

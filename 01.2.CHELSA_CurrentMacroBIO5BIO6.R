@@ -1,3 +1,5 @@
+# Should not used CHELSA data to calcute the future BIO 5 and BIO 6. 
+# Consider deleting this script.
 library(terra)
 
 # Load chelsa macroclimate BIO5 and BIO6 data of current time.
