@@ -121,3 +121,63 @@ writeRaster(
   "D:/PhD/Data/Output/CHELSA/CHELSA_pr_Europe_2000-2018_12monthsStack.tif",
   overwrite = TRUE
 )
+
+#################################################
+#### Use dismo to get bioclimatic variables. ####
+#################################################
+library(raster)
+tasmax <- stack("D:/PhD/Data/Output/CHELSA/CHELSA_tasmax_Europe_2000-2019_12monthsStack.tif")
+tasmin <- stack("D:/PhD/Data/Output/CHELSA/CHELSA_tasmin_Europe_2000-2019_12monthsStck.tif")
+prec <- stack("D:/PhD/Data/Output/CHELSA/CHELSA_pr_Europe_2000-2018_12monthsStack.tif")
+
+# Get the bioclimatics.
+# All the input tasmax, tasmin, prec were scaled based on CHELSA report.
+bio_vars <- biovars(prec, tasmin, tasmax)
+writeRaster(bio_vars, 
+            filename = "D:/PhD/Data/Output/CHELSA/CHELSA_bioclim_Europe_2000_2019.tif", 
+            format = "GTiff", 
+            overwrite = TRUE)
+
+bio01 <- bio_vars[[1]]
+plot(bio01)
+forest <- rast("I:/DATA/forestBIO1_convertedTO0_25m.tif")
+bio01 <- rast(bio01)
+bio01_repro <- project(bio01, crs(forest))
+bio01_repro
+plot(bio01_repro)
+bio01_resamp <- resample(bio01_repro, forest, method = "bilinear")
+bio01_mask <- mask(bio01_resamp, forest)
+
+## Extract bio5 and bio6 from output bioclim ####
+
+# Load data.
+bioclim <- rast("H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bioclim_Europe_2000_2019.tif")
+plot(bioclim)
+
+# bio5
+bio5 <- bioclim[[5]]
+plot(bio5)
+writeRaster(bio5, 
+            "H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio5_EU_2000-2019.tif",
+            overwrite = TRUE)
+
+# bio6
+bio6 <- bioclim[[6]]
+plot(bio6)
+writeRaster(bio6, 
+            "H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio6_EU_2000-2019.tif",
+            overwrite = TRUE)
+
+# bio12
+bio12 <- bioclim[[12]]
+plot(bio12)
+writeRaster(bio12, 
+            "H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio12_EU_2000-2019.tif",
+            overwrite = TRUE)
+
+# bio15
+bio15 <- bioclim[[15]]
+plot(bio15)
+writeRaster(bio15, 
+            "H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio15_EU_2000-2019.tif",
+            overwrite = TRUE)
