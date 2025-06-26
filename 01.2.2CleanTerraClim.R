@@ -5,12 +5,14 @@ plot(tmax)
 tmin <- rast("E:/Input/TerraClimate/Original/terraclimate_tmin_2000-2020.nc")
 show(tmin)
 show(tmax)
+prec <- rast("I:/DATA/terraclimate_ppt_2000-2020.nc")
+show(prec)
 
 # Load the eu shapefile.
 eu_shp <- vect("I:/EUshap/Europe.shp")
 plot(eu_shp)
 print(eu_shp)
-x <- crs(tmin)
+x <- crs(prec)
 eu_shp <- project(eu_shp, x)
 
 # Crop the maximumT and minimumT.
@@ -19,6 +21,11 @@ plot(tmax_c)
 tmin_c <- crop(tmin, eu_shp, mask = TRUE, overwrite = TRUE)
 show(tmin_c)
 plot(tmin_c)
+
+prec_crop <- crop(prec, eu_shp)
+prec_mask <- mask(prec_crop, eu_shp)
+print(prec_mask)
+plot(prec_mask)
 
 # writeRaster(tmax_c,
 #     filename = "E:/Input/TerraClimate/terraClimate_tmax_EU_wgs84.tif",
@@ -29,14 +36,29 @@ plot(tmin_c)
 #     filename = "E:/Input/TerraClimate/terraClimate_tmin_EU_wgs84.tif",
 #     overwrite = TRUE
 # )
+writeRaster(
+    prec_mask,
+    filename = "I:/DATA/output/terraClimate/terraClimate_prec_EU_wgs84.tif",
+    overwrite = TRUE
+)
 
-#### calculate BIO5 based on the maximum of each pixel across layers. ####
-tmax_bio5 <- max(tmax_c)
-tmin_bio6 <- min(tmin_c)
-which.max(tmax_bio5)
-which.min(tmin_bio6)
-plot(tmax_bio5)
-plot(tmin_bio6)
+#### calculate monthly data. ####
+prec <- rast("I:/DATA/output/terraClimate/terraClimate_prec_EU_wgs84.tif")
+tasmax <- rast("E:/Input/TerraClimate/terraClimate_tmax_EU_wgs84.tif")
+tasmin <- rast("E:/Input/TerraClimate/terraClimate_tmin_EU_wgs84.tif")
+# Create grouping vector: repeat each month index 21 times
+# (i.e., 2000-2020)
+grouping <- rep(1:12, each = 21)
+
+# Get the mean temperature for each month
+monthly_tasmin <- tapp(s_files, grouping, fun = mean)
+
+# Assign month names to the layers
+month_names <- c("January", "February", "March", "April", "May", "June", 
+                 "July", "August", "September", "October", "November", "December")
+
+# Assuming there are exactly 12 layers (one for each month)
+names(monthly_tasmin) <- month_names
 
 #### Reproject to GRS80.####
 template <- rast("I:/DATA/mean_annualOffset.tif")
