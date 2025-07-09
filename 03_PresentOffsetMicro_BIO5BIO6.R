@@ -18,7 +18,7 @@ offsetbio5 <- microbio5 - macrobio5
 offsetbio5
 offsetbio5 <- round(offsetbio5, digits = 1)
 writeRaster(offsetbio5,
-    filename = "H:/Output/BIO5BIO6/present/terraOffsetBIO5_2000-2020.tif",
+    filename = "H:/Output/BIO5BIO6/present/ForestClimTerraClimate_OffsetBIO5_2000-2020.tif",
     overwrite = TRUE
 )
 

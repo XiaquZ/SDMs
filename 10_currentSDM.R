@@ -1,16 +1,15 @@
-library(terra)  # Modern alternative to raster
+library(terra) # Modern alternative to raster
 library(dplyr)
 library(MASS)
 library(ENMeval)
-library(prodlim)
-library(sf)  # For vector data
+library(ecospat) # for ecospat.boyce()
 
 ####################################################################################
 ########################              Setup Paths               ######################
 ####################################################################################
 
 # Define directory paths
-base_dir <- "I:/SMDs_be"
+base_dir <- "H:/SDMs/SDMs_current"
 predict_path <- file.path(base_dir, "Predictors")
 occ_path <- file.path(base_dir, "Occurrences_cleaned")
 shp_path <- file.path(base_dir, "Shapefiles")
@@ -27,23 +26,30 @@ set.seed(16)
 Europe <- vect(shp_path)
 
 # Load environmental variables
-pred_vars <- c("be_bio5", "be_bio6", "be_bio12", "be_bio15", "cec_be", "clay_be")
+pred_vars <- c(
+  "Micro_BIO5_EU_CHELSAbased_2000-2020",
+  "Micro_BIO6_EU_CHELSAbased_2000-2020",
+  "CHELSA_bio12_EU_2000-2019",
+  "CHELSA_bio15_EU_2000-2019",
+  "cec",
+  "clay"
+  )
 pred_files <- file.path(predict_path, paste0(pred_vars, ".tif"))
-covariates_macro <- rast(pred_files)
-names(covariates_macro) <- pred_vars
+covariates_pred <- rast(pred_files)
+names(covariates_pred) <- pred_vars
+covariates_pred
 
 # Occurrence files
 occurrence.files <- list.files(occ_path, pattern = "\\.csv$", full.names = TRUE)
 occurrence.names <- list.files(occ_path, pattern = "\\.csv$", full.names = FALSE)
 occurrence.tif <- gsub(".csv", ".tif", occurrence.names)
 
-# Template raster indices
-sel.pr <- complete.cases(values(covariates_macro))
-indices <- which(sel.pr)
 
-rm(list=ls()[! ls() %in% c("covariates_macro", "occurrence.files", "occurrence.names", 
-                           "occurrence.tif", "Europe", "indices", 
-                           "pred_vars", "metrics", "save_rasters", "output_dir")])
+rm(list = ls()[!ls() %in% c(
+  "covariates_pred", "occurrence.files", "occurrence.names",
+  "occurrence.tif", "Europe",
+  "pred_vars", "metrics", "save_rasters", "output_dir"
+)])
 
 ####################################################################################
 ########################              SDM Loop                  ######################
@@ -51,84 +57,165 @@ rm(list=ls()[! ls() %in% c("covariates_macro", "occurrence.files", "occurrence.n
 
 metrics <- data.frame(Species = character(), CBI = numeric(), Sensitivity = numeric())
 
-for(r in seq_along(occurrence.files)) {
+for (r in seq_along(occurrence.files)) {
   cat("Processing:", occurrence.names[r], "\n")
 
-  species_df <- read.csv(occurrence.files[r])
-  train_idx <- sample(seq_len(nrow(species_df)), size = 0.8 * nrow(species_df))
-  internal <- species_df[train_idx, ]
-  external <- species_df[-train_idx, ]
+species_df <- read.csv(occurrence.files[r])
+occs_coords <- species_df[, c("Longitude", "Latitude")]
 
-  # Kernel density
-  bias <- kde2d(internal$Longitude, internal$Latitude,
-                n = c(ncol(covariates_macro), nrow(covariates_macro)),
-                lims = c(range(xFromCell(covariates_macro, 1:ncell(covariates_macro))),
-                         range(yFromCell(covariates_macro, 1:ncell(covariates_macro)))))
-  bias_ras <- rast(bias$z, extent = ext(covariates_macro))
-  crs(bias_ras) <- crs(covariates_macro)
-  bias_ras <- mask(bias_ras, vect(Europe))
-  bias_ras[is.na(bias_ras)] <- 0
+# Split into internal (80%) and external (20%)
+n_occs <- nrow(occs_coords)
+test_idx <- sample(seq_len(n_occs), size = ceiling(0.2 * n_occs))
+external <- occs_coords[test_idx, ]
+internal <- occs_coords[-test_idx, ]
 
-  # Occurrences and background
-  occs.z <- cbind(internal[, 2:3], terra::extract(covariates_macro, internal[, 2:3])) %>% na.omit()
+  # Kernel density (use raster resolution directly without ncol/nrow)
+ res_x <- res(covariates_pred)[1]
+ res_y <- res(covariates_pred)[2]
+ grid_size_x <- ceiling((ext(covariates_pred)[2] - ext(covariates_pred)[1]) / res_x)
+ grid_size_y <- ceiling((ext(covariates_pred)[4] - ext(covariates_pred)[3]) / res_y)
 
-  bg_ratio <- 3
-  bg_n <- bg_ratio * nrow(occs.z)
-  bg_xy <- spatSample(bias_ras, bg_n, method = "weights", as.points = TRUE)
-  bg_df <- terra::extract(covariates_macro, bg_xy) %>% cbind(st_coordinates(bg_xy)) %>% na.omit()
-  colnames(bg_df) <- c(pred_vars, "Longitude", "Latitude")
-  bg_df <- bg_df[sample(nrow(bg_df), nrow(occs.z)), c("Longitude", "Latitude", pred_vars)]
+ bias <- kde2d(
+   x = internal$Longitude,
+   y = internal$Latitude,
+   n = c(grid_size_x, grid_size_y),
+   lims = c(
+     ext(covariates_pred)[1], ext(covariates_pred)[2], # xmin, xmax
+     ext(covariates_pred)[3], ext(covariates_pred)[4]  # ymin, ymax
+   )
+ )
+bias_ras <- rast(bias$z, extent = ext(covariates_pred), crs = crs(covariates_pred))
+bias_ras <- mask(bias_ras, Europe)
+bias_ras[is.na(bias_ras)] <- 0
 
-  # ENMeval modeling
-  e.mx <- ENMevaluate(occs = occs.z, bg = bg_df, algorithm = "maxnet", partitions = "block",
-                      tune.args = list(fc = c("L","Q","P","LQ","QP","LP","LQP"),
-                                       rm = c(0.5, 1, 2, 3, 4, 5)),
-                      parallel = TRUE, numCores = 10)
 
-  res <- eval.results(e.mx)
-  opt.seq <- filter(res, delta.AICc == min(delta.AICc))
-  best.mdl <- row.match(opt.seq, res)
+# Background points sampled with KDE bias
+bg_ratio <- 3
+bg_n <- bg_ratio * nrow(internal)
+bg_xy <- spatSample(bias_ras, bg_n, method = "weights", as.points = TRUE)
+bg_coords <- as.data.frame(crds(bg_xy))
+colnames(bg_coords) <- c("Longitude", "Latitude")
 
-  # Predicting
-  logistic_rasters <- lapply(best.mdl, function(i) {
-    predict(e.mx@models[[i]], envs = covariates_macro, type = "logistic") * 100
+# Pre-extract predictor values for occurrences and background
+occs.z <- cbind(
+  internal,
+  terra::extract(covariates_pred, internal, ID = FALSE)
+) %>% na.omit()
+
+bg.z <- cbind(
+  bg_coords,
+  terra::extract(covariates_pred, bg_coords, ID = FALSE)
+) %>% na.omit()
+
+# ENMeval modeling (SWD, no raster input)
+# We use the blocked method and the feature classes "linear", "quadratic", "product"
+# No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster!
+# Afterwards predict to raster for the best model only
+e.swd <- ENMevaluate(
+  occs = occs.z,
+  bg = bg.z,
+  algorithm = "maxnet",
+  partitions = "block",
+  partition.settings = list(orientation = "lat_lon"),
+  tune.args = list(
+    fc = c("L", "Q", "P", "LQ", "QP", "LP", "LQP"),
+    rm = c(0.5, 1, 2, 3, 4, 5)
+  ),
+  parallel = TRUE,
+  numCores = 5
+)
+
+# Select best model by delta.AICc
+res <- eval.results(e.swd)
+
+best.idx <- which(res$delta.AICc == min(res$delta.AICc))
+best.models <- e.swd@models[best.idx]
+n_best_models <- length(best.idx)
+
+# Predict best model(s) to raster with low memory use
+if (n_best_models == 1) {
+  cat("  - Single best model found\n")
+  out_file <- file.path(output_dir, paste0("logistic_", occurrence.tif[r]))
+  pred_ras <- ENMeval::maxnet.predictRaster(
+    mod = best.models[[1]],
+    envs = covariates_pred,
+    pred.type = "cloglog",
+    doClamp = TRUE,
+  ) 
+  pred_ras <- pred_ras * 100
+  pred_ras <- round(pred_ras, digits = 1)
+  # Save to disk
+  writeRaster(pred_ras, out_file, overwrite = TRUE)
+  
+} else {
+  cat("  - Multiple best models found (", n_best_models, "), averaging predictions\n")
+  tmp_rasters <- lapply(best.models, function(mod) {
+    ENMeval::maxnet.predictRaster(
+      mod = mod,
+      envs = covariates_pred,
+      pred.type = "cloglog",
+      doClamp = TRUE
+    )
   })
-  pred_ras <- Reduce(`+`, logistic_rasters) / length(logistic_rasters)
-  pred_ras <- round(pred_ras)
-
-  # Threshold
-  occs.s <- cbind(internal[, 2:3], terra::extract(pred_ras, internal[, 2:3]))
-  colnames(occs.s) <- c("Longitude", "Latitude", "Probability")
-  or.10p.avg <- quantile(occs.s$Probability, probs = 0.1, na.rm = TRUE)
-
-  binary_ras <- pred_ras
-  binary_ras[binary_ras <= or.10p.avg] <- 0
-  binary_ras[binary_ras > or.10p.avg] <- 1
-
-  if (save_rasters) {
-    writeRaster(pred_ras, file.path(output_dir, paste0("logistic_", occurrence.tif[r])), overwrite = TRUE)
-    writeRaster(binary_ras, file.path(output_dir, paste0("binary_", occurrence.tif[r])), overwrite = TRUE)
-  }
-
-  # CBI
-  obs <- na.omit(terra::extract(pred_ras, external[, c("Longitude", "Latitude")]))
-  logistic.vct <- values(pred_ras)[sample(seq_len(ncell(pred_ras)), 1e7)]
-  CBI <- ecospat.boyce(fit = logistic.vct, obs = obs)$cor
-
-  # Sensitivity
-  sensitivity_df <- cbind(external[, 2:3], terra::extract(pred_ras, external[, 2:3])) %>% na.omit()
-  colnames(sensitivity_df) <- c("Longitude", "Latitude", "Predicted")
-  sensitivity_df$Observed <- 1
-  sensitivity_df$Predicted <- ifelse(sensitivity_df$Predicted <= or.10p.avg, 0, 1)
-  conf_matrix <- table(sensitivity_df$Observed, sensitivity_df$Predicted)
-  sensitivity <- conf_matrix[2] / (sum(conf_matrix) + 1e-6)
-
-  metrics <- rbind(metrics, data.frame(Species = occurrence.names[r], CBI = CBI, Sensitivity = sensitivity))
-
-  rm(list=ls()[! ls() %in% c("covariates_macro", "occurrence.files", "occurrence.names", 
-                             "occurrence.tif", "Europe", "indices", 
-                             "pred_vars", "metrics", "save_rasters", "output_dir")])
+  ras_stack <- rast(tmp_rasters)
+  pred_ras <- app(ras_stack, fun = mean)
 }
 
-# Optionally save metrics
-# write.csv(metrics, file.path(output_dir, "SDM_metrics_summary.csv"), row.names = FALSE)
+# Scale and round predictions
+pred_ras <- pred_ras * 100
+pred_ras <- round(pred_ras, digits = 1)
+# Save continuous prediction raster
+if (save_rasters) {
+  out_file <- paste0(output_dir, "/Average_", length(best.idx), "_mdls_", occurrence.tif[r])
+  writeRaster(pred_ras, out_file, overwrite = TRUE)
+}
+ 
+
+### === Threshold (10 percentile training presence) === ###
+occs_probs <- terra::extract(pred_ras, internal, ID = FALSE)
+or.10p.avg <- quantile(occs_probs, probs = 0.1, na.rm = TRUE)
+
+binary_ras <- pred_ras
+binary_ras[binary_ras <= or.10p.avg] <- 0
+binary_ras[binary_ras > or.10p.avg] <- 1
+plot(binary_ras)
+
+if (save_rasters) {
+  bin_file <- file.path(output_dir, paste0("binary_", occurrence.tif[r]))
+  writeRaster(binary_ras, bin_file, overwrite = TRUE)
+}
+
+### === CBI (using external data) === ###
+obs_probs <- na.omit(terra::extract(pred_ras, external, ID = FALSE))
+bg_probs <- spatSample(
+  pred_ras,
+  size = min(1e7, ncell(pred_ras)),
+  method = "random",
+  na.rm = TRUE,
+  exhaustive=TRUE)
+
+CBI <- ecospat.boyce(fit = bg_probs, obs = obs_probs)$cor
+
+### === Sensitivity (using external data) === ###
+ext_probs <- na.omit(terra::extract(pred_ras, external))
+predicted_classes <- ifelse(ext_probs <= or.10p.avg, 0, 1)
+sensitivity <- sum(predicted_classes == 1) / length(predicted_classes)
+
+### === Store metrics === ###
+metrics <- rbind(metrics, data.frame(
+  Species = occurrence.names[r],
+  CBI = CBI,
+  Sensitivity = sensitivity,
+  Threshold_10pct = or.10p.avg
+))
+
+# Clean memory
+rm(list = ls()[!ls() %in% c(
+  "covariates_pred", "occurrence.files", "occurrence.names",
+  "occurrence.tif", "Europe", "metrics",
+  "save_rasters", "output_dir", "pred_vars"
+)])
+}
+
+# Save metrics summary
+write.csv(metrics, file.path(output_dir, "SDMs_metrics_summary.csv"), row.names = FALSE)

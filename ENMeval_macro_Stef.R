@@ -2,7 +2,6 @@ library(raster)
 library(dplyr)
 library(MASS)
 library(ENMeval)
-library(prodlim)
 library(rgdal)
 
 #####################################################################################
