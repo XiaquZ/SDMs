@@ -3,13 +3,14 @@ library(dplyr)
 library(MASS)
 library(ENMeval)
 library(ecospat) # for ecospat.boyce()
+library(sf)
 
 ####################################################################################
 ########################              Setup Paths               ######################
 ####################################################################################
 
 # Define directory paths
-base_dir <- "H:/SDMs/SDMs_current"
+base_dir <- "F:/SDMs/SDMs_current"
 predict_path <- file.path(base_dir, "Predictors")
 occ_path <- file.path(base_dir, "Occurrences_cleaned")
 shp_path <- file.path(base_dir, "Shapefiles")
@@ -32,7 +33,9 @@ pred_vars <- c(
   "CHELSA_bio12_EU_2000-2019",
   "CHELSA_bio15_EU_2000-2019",
   "cec",
-  "clay"
+  "clay",
+  "Slope",
+  "Elevation"
   )
 pred_files <- file.path(predict_path, paste0(pred_vars, ".tif"))
 covariates_pred <- rast(pred_files)
@@ -54,8 +57,9 @@ rm(list = ls()[!ls() %in% c(
 ####################################################################################
 ########################              SDM Loop                  ######################
 ####################################################################################
-
-metrics <- data.frame(Species = character(), CBI = numeric(), Sensitivity = numeric())
+#  #Aggregate to 500m resolution to improve the speed
+temp_rast <- covariates_pred[[1]]
+temp_rast <- terra::aggregate(temp_rast, fact = 10) # aggregate resolution.
 
 for (r in seq_along(occurrence.files)) {
   cat("Processing:", occurrence.names[r], "\n")
@@ -63,38 +67,71 @@ for (r in seq_along(occurrence.files)) {
 species_df <- read.csv(occurrence.files[r])
 occs_coords <- species_df[, c("Longitude", "Latitude")]
 
-# Split into internal (80%) and external (20%)
+ #### Split into internal (80%) and external (20%)
 n_occs <- nrow(occs_coords)
 test_idx <- sample(seq_len(n_occs), size = ceiling(0.2 * n_occs))
 external <- occs_coords[test_idx, ]
 internal <- occs_coords[-test_idx, ]
 
-  # Kernel density (use raster resolution directly without ncol/nrow)
- res_x <- res(covariates_pred)[1]
- res_y <- res(covariates_pred)[2]
- grid_size_x <- ceiling((ext(covariates_pred)[2] - ext(covariates_pred)[1]) / res_x)
- grid_size_y <- ceiling((ext(covariates_pred)[4] - ext(covariates_pred)[3]) / res_y)
+#   #### Method 1: Kernel density (use raster resolution directly without ncol/nrow)
+#  #Aggregate to 500m resolution to improve the speed
+# temp_rast <- covariates_pred[[1]]
+# temp_rast <- terra::aggregate(temp_rast, fact = 10) # aggregate resolution.
+# 
+# # Create kernel density estimate
+# bias <- kde2d(internal[, "Longitude"], internal[, "Latitude"], 
+#               n = c(ncol(temp_rast), nrow(temp_rast)),
+#               lims = c(
+#                 ext(temp_rast)[1], ext(temp_rast)[2], # xmin, xmax
+#                 ext(temp_rast)[3], ext(temp_rast)[4]  # ymin, ymax
+#               )) # limits of density funtion
+# bias.ras <- rast(bias)
+# ext(bias.ras) <- ext(temp_rast)
+# crs(bias.ras) <- crs(temp_rast)
+# bias.ras <- mask(bias.ras, temp_rast)
+# 
+# # Background points sampled with KDE bias
+# bg_n <- nrow(internal)
+# bg_xy <- spatSample(bias.ras, bg_n, method = "weights", as.points = TRUE)
+# bg_coords <- as.data.frame(crds(bg_xy))
+# colnames(bg_coords) <- c("Longitude", "Latitude")
 
- bias <- kde2d(
-   x = internal$Longitude,
-   y = internal$Latitude,
-   n = c(grid_size_x, grid_size_y),
-   lims = c(
-     ext(covariates_pred)[1], ext(covariates_pred)[2], # xmin, xmax
-     ext(covariates_pred)[3], ext(covariates_pred)[4]  # ymin, ymax
-   )
- )
-bias_ras <- rast(bias$z, extent = ext(covariates_pred), crs = crs(covariates_pred))
-bias_ras <- mask(bias_ras, Europe)
-bias_ras[is.na(bias_ras)] <- 0
+#### Methods 2: Background thickening method for bg data. ####
+# convert internal to sf (for buffering etc.)
+occ_sf <- st_as_sf(internal, coords = c("Longitude","Latitude"),
+                   crs = crs(covariates_pred))
+thickening_radius = 50000
 
 
-# Background points sampled with KDE bias
-bg_ratio <- 3
-bg_n <- bg_ratio * nrow(internal)
-bg_xy <- spatSample(bias_ras, bg_n, method = "weights", as.points = TRUE)
-bg_coords <- as.data.frame(crds(bg_xy))
-colnames(bg_coords) <- c("Longitude", "Latitude")
+
+# Create buffer around each presence point
+presence_buffers <- st_buffer(occ_sf, dist = thickening_radius)
+
+# Convert thickened area to SpatVector for terra
+thickened_area_vect <- vect(presence_buffers)
+plot(thickened_area_vect)
+
+# Count how many buffer are overlaped together as pixel values.
+bias_rast <- rasterize(thickened_area_vect, temp_rast, fun = "sum")
+
+# mask the bias surface so we only sample where environment vars have data
+bias_rast  <- mask(bias_rast, temp_rast) #mask the bias surface so we only sample where mask_raster had data
+
+# Sample background points within thickened area
+set.seed(16)
+n_bg <- 10000 #fix number of 10,000
+
+# sample background points
+bg_pts <- spatSample(
+  bias_rast,
+  size      = n_bg,
+  method    = "weights",
+  as.points = TRUE
+) 
+# extract coords back to data.frame
+bg_coords <- as.data.frame(crds(bg_pts))
+colnames(bg_coords) <- c("Longitude","Latitude")
+
 
 # Pre-extract predictor values for occurrences and background
 occs.z <- cbind(
@@ -102,10 +139,17 @@ occs.z <- cbind(
   terra::extract(covariates_pred, internal, ID = FALSE)
 ) %>% na.omit()
 
+# Bg thickening
 bg.z <- cbind(
   bg_coords,
   terra::extract(covariates_pred, bg_coords, ID = FALSE)
 ) %>% na.omit()
+
+occs.z <- as.data.frame(occs.z)
+bg.z <- as.data.frame(bg.z)
+names(occs.z) <- make.names(names(occs.z))
+names(bg.z) <- make.names(names(bg.z))
+
 
 # ENMeval modeling (SWD, no raster input)
 # We use the blocked method and the feature classes "linear", "quadratic", "product"
@@ -122,8 +166,16 @@ e.swd <- ENMevaluate(
     rm = c(0.5, 1, 2, 3, 4, 5)
   ),
   parallel = TRUE,
-  numCores = 5
+  numCores = 10
 )
+fn <- file.path(output_dir,
+                paste0(gsub(".csv", "_ENMeval_swd.RData",
+                                            occurrence.names[[r]])))
+save(e.swd, file = fn)
+}
+
+#### Produce matrix ####
+metrics <- data.frame(Species = character(), CBI = numeric(), Sensitivity = numeric())
 
 # Select best model by delta.AICc
 res <- eval.results(e.swd)
@@ -215,7 +267,7 @@ rm(list = ls()[!ls() %in% c(
   "occurrence.tif", "Europe", "metrics",
   "save_rasters", "output_dir", "pred_vars"
 )])
-}
+
 
 # Save metrics summary
 write.csv(metrics, file.path(output_dir, "SDMs_metrics_summary.csv"), row.names = FALSE)

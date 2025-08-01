@@ -7,6 +7,15 @@ library(terra)
 input_dir <- "F:/Output/fut_SDMs/species_tiles/"
 output_dir <- "F:/Output/fut_SDMs/species_final/"
 
+# extract species names from the file names.
+folder_path <- "D:/SDMs/SDMs_current/Occurrences_done"
+
+# List all .csv files in the folder
+csv_files <- list.files(path = folder_path, pattern = "\\.csv$", full.names = FALSE)
+
+# Remove the '.csv' extension to extract species names
+species_names <- tools::file_path_sans_ext(csv_files)
+
 # List species tiles
 species_tiles <- list.files(input_dir, full.names = TRUE)
 species_names <- unique(basename(species_tiles))
