@@ -18,7 +18,7 @@ predict_CurrentSDM <- function(input_folders, mdl_paths) {
   tile_files <- tile_files[o]
 
   # Iterate through tiles (assumes tiles are numbered from 1 to 9)
-  for (i in tile_nums) {
+  for (i in 9:11) {
     # Initialize an empty list to store predictors for this tile
     # Define predictor keywords
     predictors <- c(
@@ -58,7 +58,7 @@ predict_CurrentSDM <- function(input_folders, mdl_paths) {
     print(paste0("Start selecting lowest AIC model for: ", species_name))
 
     # Load model object
-    mdl <- load(mdl_paths[[2]])
+    mdl <- load(mdl_paths)
     mdl <- e.swd
 
     # Select the best SDM based on delta AIC
@@ -94,9 +94,8 @@ predict_CurrentSDM <- function(input_folders, mdl_paths) {
       writeRaster(pred_ras,
         filename = paste0(
           "I:/SDMs_France/Results/current_sdms/",
-          species_name, "_tile_", i, ".tif", overwrite = TRUE
-        ),
-      )
+          species_name, "_tile_", i, ".tif"), overwrite = TRUE
+        )
     } else {
       for (k in seq_along(min_index)) {
         mdl_select <- mdl@models[[min_index[[k]]]]
@@ -113,9 +112,8 @@ predict_CurrentSDM <- function(input_folders, mdl_paths) {
         writeRaster(pred_ras,
           filename = paste0(
             "I:/SDMs_France/Results/current_sdms/",
-            species_name, "_tile_", i, "_model", k, ".tif", overwrite = TRUE
-          ),
-        )
+            species_name, "_tile_", i, "_model", k, ".tif"), overwrite = TRUE
+          )
       }
     }
   }
