@@ -1,11 +1,11 @@
 library(terra)
 
-tmax <- rast("H:/Input/TerraClimate/Original/terraclimate_tmax_2000-2020.nc")
+tmax <- rast("F:/Input/TerraClimate/Original/terraclimate_tmax_2000-2020.nc")
 plot(tmax)
-tmin <- rast("H:/Input/TerraClimate/Original/terraclimate_tmin_2000-2020.nc")
+tmin <- rast("F:/Input/TerraClimate/Original/terraclimate_tmin_2000-2020.nc")
 show(tmin)
 show(tmax)
-prec <- rast("I:/DATA/terraclimate_ppt_2000-2020.nc")
+prec <- rast("F:/Input/TerraClimate/Original/terraclimate_ppt_2000-2020.nc")
 show(prec)
 
 # Load the eu shapefile.
@@ -31,18 +31,18 @@ print(prec_mask)
 plot(prec_mask)
 
 writeRaster(tmax_mask,
-    filename = "H:/Input/TerraClimate/MonthlyClim/terraClimate_tmax_EU_wgs84.tif",
+    filename = "F:/Input/TerraClimate/Monthly_EU/terraClimate_tmax_EU_wgs84.tif",
     overwrite = TRUE
 )
 
 writeRaster(tmin_mask,
-            filename = "H:/Input/TerraClimate/MonthlyClim/terraClimate_tmin_EU_wgs84.tif",
+            filename = "F:/Input/TerraClimate/Monthly_EU/terraClimate_tmin_EU_wgs84.tif",
             overwrite = TRUE
 )
 
 writeRaster(
     prec_mask,
-    filename = "H:/Input/TerraClimate/MonthlyClim/terraClimate_prec_EU_wgs84.tif",
+    filename = "F:/Input/TerraClimate/Monthly_EU//terraClimate_prec_EU_wgs84.tif",
     overwrite = TRUE
 )
 
@@ -50,22 +50,21 @@ writeRaster(
 #### calculate monthly data. ####
 #################################
 # Load the monthly data.
-prec <- rast("H:/Input/TerraClimate/MonthlyClim/terraClimate_prec_EU_wgs84.tif")
-tasmax <- rast("H:/Input/TerraClimate/MonthlyClim/terraClimate_tmax_EU_wgs84.tif")
-tasmin <- rast("H:/Input/TerraClimate/MonthlyClim/terraClimate_tmin_EU_wgs84.tif")
+prec <- rast("F:/Input/TerraClimate/Monthly_EU//terraClimate_prec_EU_wgs84.tif")
+tasmax <- rast("F:/Input/TerraClimate/Monthly_EU/terraClimate_tmax_EU_wgs84.tif")
+tasmin <- rast("F:/Input/TerraClimate/Monthly_EU/terraClimate_tmin_EU_wgs84.tif")
 
 ##  Build grouping vectors from the time stamp --------------------------
 mons <- as.integer(format(time(prec), "%m")) # 1 … 12,   length = 252
 
-
 ##  Long-term monthly climatology (mean for all Januaries, all Februaries …) --
 prec_monthly <- tapp(prec, index = mons, fun = mean, na.rm = TRUE)
-names(prec_monthly) <- month.abb # Jan, Feb, …
+names(prec_monthly) <- sprintf("prec_%02d", 1:12) # Jan, Feb, …
 
 ##  (Optional) Save to disk ----------------------------------------------------
 writeRaster(
     prec_monthly,
-    "I:/DATA/output/terraClimate/terra_prec_monthly_climatology_wgs84_2000-2020.tif",
+    "F:/Input/TerraClimate/Monthly_EU/terra_prec_monthly_climatology_wgs84_2000-2020_12layers.tif",
     overwrite = TRUE
 )
 
@@ -77,18 +76,18 @@ mons_tas <- as.integer(format(time(tasmax), "%m")) # 1 … 12,   length = 252
 
 ##  Long-term monthly climatology (mean for all Januaries, all Februaries …) --
 tasmax_monthly <- tapp(tasmax, index = mons_tas, fun = mean, na.rm = TRUE)
-names(tasmax_monthly) <- month.abb # Jan, Feb, …
+names(tasmax_monthly) <- sprintf("tmax_%02d", 1:12) # Jan, Feb, …
 tasmin_monthly <- tapp(tasmin, index = mons_tas, fun = mean, na.rm = TRUE)
-names(tasmin_monthly) <- month.abb # Jan, Feb, …
+names(tasmin_monthly) <- sprintf("tmin_%02d", 1:12) # Jan, Feb, …
 ##  (Optional) Save to disk ----------------------------------------------------
 writeRaster(
     tasmax_monthly,
-    "I:/DATA/output/terraClimate/terra_tasmax_monthly_climatology_wgs84_2000-2020.tif",
+    "F:/Input/TerraClimate/Monthly_EU/terra_tasmax_monthly_climatology_wgs84_2000-2020_12layers.tif",
     overwrite = TRUE
 )
 writeRaster(
     tasmin_monthly,
-    "I:/DATA/output/terraClimate/terra_tasmin_monthly_climatology_wgs84_2000-2020.tif",
+    "F:/Input/TerraClimate/Monthly_EU/terra_tasmin_monthly_climatology_wgs84_2000-2020_12layers.tif",
     overwrite = TRUE
 )
 

@@ -6,10 +6,11 @@ library(sf)
 c_shape <- read_sf(
   "/lustre1/scratch/348/vsc34871/SDM_current/Shapefiles/Europe.shp"
   )
+c_shape <- st_buffer(c_shape, 1) # buffer by 1 meter to avoid potential issues
 plot(c_shape)
 
 # create an initial grid for centroid determination
-c_grid <- st_make_grid(c_shape, cellsize = c(4e5, 4e5)) |>
+c_grid <- st_make_grid(c_shape, cellsize = c(9e5, 9e5)) |>
   st_as_sf()
 # inspect
 plot(st_geometry(c_shape))
@@ -35,7 +36,9 @@ names(stk)
    "elevation" = "Elevation",
    "CHELSA_bioclim_Europe_2000_2019_5" = "Micro_BIO5_EU_CHELSAbased_2000.2020",
    "CHELSA_bioclim_Europe_2000_2019_6" = "Micro_BIO6_EU_CHELSAbased_2000.2020",
-   "slope" = "Slope"
+   "slope" = "Slope",
+   "TWI" = "TWI",
+   "phh2o_0_30cm_mean" = "phh2o_0_30_WeightedMean"
  )
 
  # Loop through the layers and rename based on the mapping
@@ -53,18 +56,20 @@ print(stk)
 
 ## Making tiles:
 # Numbers of predictors.
-pred_n <- 8
+pred_n <- 10
 
 # Define a mapping of keywords to output folders
 output_folders <- list(
-  cec = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/cec/",
-  CHELSA_bio12_EU_2000.2019 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/CHELSA_bio12_EU_2000.2019/",
-  CHELSA_bio15_EU_2000.2019 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/CHELSA_bio15_EU_2000.2019/",
-  clay = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/clay/",
-  Elevation = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/Elevation/",
-  Micro_BIO5_EU_CHELSAbased_2000.2020 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/Micro_BIO5_EU_CHELSAbased_2000.2020/",
-  Micro_BIO6_EU_CHELSAbased_2000.2020 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/Micro_BIO6_EU_CHELSAbased_2000.2020/",
-  Slope = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/Slope/"
+  cec = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/cec/",
+  CHELSA_bio12_EU_2000.2019 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/CHELSA_bio12_EU_2000.2019/",
+  CHELSA_bio15_EU_2000.2019 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/CHELSA_bio15_EU_2000.2019/",
+  clay = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/clay/",
+  Elevation = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/Elevation/",
+  Micro_BIO5_EU_CHELSAbased_2000.2020 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/Micro_BIO5_EU_CHELSAbased_2000.2020/",
+  Micro_BIO6_EU_CHELSAbased_2000.2020 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/Micro_BIO6_EU_CHELSAbased_2000.2020/",
+  Slope = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/Slope/",
+  TWI = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/TWI/",
+  phh2o_0_30_WeightedMean = "/lustre1/scratch/348/vsc34871/SDM_current/pred_bigtiles/phh2o_0_30_WeightedMean/"
 )
 
 # Iterate through the layers in the stack
@@ -77,13 +82,8 @@ for (i in 1:pred_n) {
     if (grepl(key, pred_name, ignore.case = TRUE)) {
       output_folder <- output_folders[[key]]
       # write tile to a temp GeoTIFF
-      
-      # # HPC: choose a tempdir you know is writable on the cluster:
-      # scratch <- Sys.getenv("SCRATCH_DIR", tempdir())
-      # tmpfile <- tempfile(tmpdir = scratch, fileext = ".tif")
-      # message("Temp tile written to: ", tmpfile)
-      
-      # For lab PC.
+    
+      # Write tiles to a temporary directory first.
       # 0) ensure you have a project‐local temp folder
       tmp_dir <- file.path("/lustre1/scratch/348/vsc34871/tile_temp/")
       if (!dir.exists(tmp_dir)) dir.create(tmp_dir, showWarnings = FALSE)

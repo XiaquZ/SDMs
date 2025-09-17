@@ -7,7 +7,7 @@ c_shape <- read_sf("I:/EUshap/Europe.shp")
 plot(c_shape)
 
 # create an initial grid for centroid determination
-c_grid <- st_make_grid(c_shape, cellsize = c(4e5, 4e5)) |>
+c_grid <- st_make_grid(c_shape, cellsize = c(9e5, 9e5)) |>
   st_as_sf()
 # inspect
 plot(st_geometry(c_shape))
@@ -33,7 +33,9 @@ names(stk)
    "elevation" = "Elevation",
    "CHELSA_bioclim_Europe_2000_2019_5" = "Micro_BIO5_EU_CHELSAbased_2000.2020",
    "CHELSA_bioclim_Europe_2000_2019_6" = "Micro_BIO6_EU_CHELSAbased_2000.2020",
-   "slope" = "Slope"
+   "slope" = "Slope",
+   "TWI" = "TWI",
+   "phh2o_0_30cm_mean" = "phh2o_0_30_WeightedMean"
  )
 
  # Loop through the layers and rename based on the mapping
@@ -51,18 +53,20 @@ print(stk)
 
 ## Making tiles:
 # Numbers of predictors.
-pred_n <- 8
+pred_n <- 10
 
 # Define a mapping of keywords to output folders
 output_folders <- list(
-  cec = "I:/SDMs_France/pred_tiles/cec/",
-  CHELSA_bio12_EU_2000.2019 = "I:/SDMs_France/pred_tiles/CHELSA_bio12_EU_2000.2019/",
-  CHELSA_bio15_EU_2000.2019 = "I:/SDMs_France/pred_tiles/CHELSA_bio15_EU_2000.2019/",
-  clay = "I:/SDMs_France/pred_tiles/clay/",
-  Elevation = "I:/SDMs_France/pred_tiles/Elevation/",
-  Micro_BIO5_EU_CHELSAbased_2000.2020 = "I:/SDMs_France/pred_tiles/Micro_BIO5_EU_CHELSAbased_2000.2020/",
-  Micro_BIO6_EU_CHELSAbased_2000.2020 = "I:/SDMs_France/pred_tiles/Micro_BIO6_EU_CHELSAbased_2000.2020/",
-  Slope = "I:/SDMs_France/pred_tiles/Slope/"
+  cec = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/cec/",
+  CHELSA_bio12_EU_2000.2019 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/CHELSA_bio12_EU_2000.2019/",
+  CHELSA_bio15_EU_2000.2019 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/CHELSA_bio15_EU_2000.2019/",
+  clay = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/clay/",
+  Elevation = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/Elevation/",
+  Micro_BIO5_EU_CHELSAbased_2000.2020 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/Micro_BIO5_EU_CHELSAbased_2000.2020/",
+  Micro_BIO6_EU_CHELSAbased_2000.2020 = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/Micro_BIO6_EU_CHELSAbased_2000.2020/",
+  Slope = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/Slope/",
+  TWI = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/TWI/",
+  phh2o_0_30_WeightedMean = "/lustre1/scratch/348/vsc34871/SDM_current/pred_tiles/phh2o_0_30_WeightedMean/"
 )
 
 # Iterate through the layers in the stack

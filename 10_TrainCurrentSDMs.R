@@ -10,11 +10,11 @@ library(sf)
 ####################################################################################
 
 # Define directory paths
-base_dir <- "F:/SDMs/SDMs_current"
+base_dir <- "H:/SDMs/SDMs_current"
 predict_path <- file.path(base_dir, "Predictors")
 occ_path <- file.path(base_dir, "Occurrences_cleaned")
 shp_path <- file.path(base_dir, "Shapefiles")
-output_dir <- file.path(base_dir, "Results")
+output_dir <- file.path(base_dir, "Results/models/BG_thickening_1000km")
 save_rasters <- TRUE
 
 set.seed(16)
@@ -35,7 +35,9 @@ pred_vars <- c(
   "cec",
   "clay",
   "Slope",
-  "Elevation"
+  "Elevation",
+  "TWI",
+  "phh2o_0_30_WeightedMean"
   )
 pred_files <- file.path(predict_path, paste0(pred_vars, ".tif"))
 covariates_pred <- rast(pred_files)
@@ -55,7 +57,7 @@ rm(list = ls()[!ls() %in% c(
 )])
 
 ####################################################################################
-########################              SDM Loop                  ######################
+########################              SDM Loop                ######################
 ####################################################################################
 #  #Aggregate to 500m resolution to improve the speed
 temp_rast <- covariates_pred[[1]]
@@ -68,6 +70,9 @@ species_df <- read.csv(occurrence.files[r])
 occs_coords <- species_df[, c("Longitude", "Latitude")]
 
  #### Split into internal (80%) and external (20%)
+# 80% for internal calibration + cross-validation
+# 20% for external validation + metric calculations
+set.seed(16)
 n_occs <- nrow(occs_coords)
 test_idx <- sample(seq_len(n_occs), size = ceiling(0.2 * n_occs))
 external <- occs_coords[test_idx, ]
@@ -100,7 +105,8 @@ internal <- occs_coords[-test_idx, ]
 # convert internal to sf (for buffering etc.)
 occ_sf <- st_as_sf(internal, coords = c("Longitude","Latitude"),
                    crs = crs(covariates_pred))
-thickening_radius = 50000
+# Choose a proper radius for thickening.
+thickening_radius = 1000000 
 
 
 
@@ -139,7 +145,7 @@ occs.z <- cbind(
   terra::extract(covariates_pred, internal, ID = FALSE)
 ) %>% na.omit()
 
-# Bg thickening
+# Bg thickening: extract bg data points.
 bg.z <- cbind(
   bg_coords,
   terra::extract(covariates_pred, bg_coords, ID = FALSE)
@@ -174,7 +180,9 @@ fn <- file.path(output_dir,
 save(e.swd, file = fn)
 }
 
+########################
 #### Produce matrix ####
+########################
 metrics <- data.frame(Species = character(), CBI = numeric(), Sensitivity = numeric())
 
 # Select best model by delta.AICc
@@ -184,43 +192,43 @@ best.idx <- which(res$delta.AICc == min(res$delta.AICc))
 best.models <- e.swd@models[best.idx]
 n_best_models <- length(best.idx)
 
-# Predict best model(s) to raster with low memory use
-if (n_best_models == 1) {
-  cat("  - Single best model found\n")
-  out_file <- file.path(output_dir, paste0("logistic_", occurrence.tif[r]))
-  pred_ras <- ENMeval::maxnet.predictRaster(
-    mod = best.models[[1]],
-    envs = covariates_pred,
-    pred.type = "cloglog",
-    doClamp = TRUE,
-  ) 
-  pred_ras <- pred_ras * 100
-  pred_ras <- round(pred_ras, digits = 1)
-  # Save to disk
-  writeRaster(pred_ras, out_file, overwrite = TRUE)
+# # Predict best model(s) to raster with low memory use
+# if (n_best_models == 1) {
+#   cat("  - Single best model found\n")
+#   out_file <- file.path(output_dir, paste0("logistic_", occurrence.tif[r]))
+#   pred_ras <- ENMeval::maxnet.predictRaster(
+#     mod = best.models[[1]],
+#     envs = covariates_pred,
+#     pred.type = "cloglog",
+#     doClamp = TRUE,
+#   ) 
+#   pred_ras <- pred_ras * 100
+#   pred_ras <- round(pred_ras, digits = 1)
+#   # Save to disk
+#   writeRaster(pred_ras, out_file, overwrite = TRUE)
   
-} else {
-  cat("  - Multiple best models found (", n_best_models, "), averaging predictions\n")
-  tmp_rasters <- lapply(best.models, function(mod) {
-    ENMeval::maxnet.predictRaster(
-      mod = mod,
-      envs = covariates_pred,
-      pred.type = "cloglog",
-      doClamp = TRUE
-    )
-  })
-  ras_stack <- rast(tmp_rasters)
-  pred_ras <- app(ras_stack, fun = mean)
-}
+# } else {
+#   cat("  - Multiple best models found (", n_best_models, "), averaging predictions\n")
+#   tmp_rasters <- lapply(best.models, function(mod) {
+#     ENMeval::maxnet.predictRaster(
+#       mod = mod,
+#       envs = covariates_pred,
+#       pred.type = "cloglog",
+#       doClamp = TRUE
+#     )
+#   })
+#   ras_stack <- rast(tmp_rasters)
+#   pred_ras <- app(ras_stack, fun = mean)
+# }
 
-# Scale and round predictions
-pred_ras <- pred_ras * 100
-pred_ras <- round(pred_ras, digits = 1)
-# Save continuous prediction raster
-if (save_rasters) {
-  out_file <- paste0(output_dir, "/Average_", length(best.idx), "_mdls_", occurrence.tif[r])
-  writeRaster(pred_ras, out_file, overwrite = TRUE)
-}
+# # Scale and round predictions
+# pred_ras <- pred_ras * 100
+# pred_ras <- round(pred_ras, digits = 1)
+# # Save continuous prediction raster
+# if (save_rasters) {
+#   out_file <- paste0(output_dir, "/Average_", length(best.idx), "_mdls_", occurrence.tif[r])
+#   writeRaster(pred_ras, out_file, overwrite = TRUE)
+# }
  
 
 ### === Threshold (10 percentile training presence) === ###

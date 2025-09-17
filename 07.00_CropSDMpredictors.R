@@ -2,27 +2,30 @@
 #### Testing the scripts.####
 library(terra)
 # Load belgium shapefile. #
-region <- vect("I:/SDMs_France/Shapefiles/France.shp")
+region <- vect("I:/SDM_test/belgium/belgium.shp")
 plot(region)
 
 # Bioclim data
 micro_bio5 <- rast(
-  "D:/PhD/Data/SDMs_current/Predictors/Micro_BIO5_EU_CHELSAbased_2000-2020.tif"
+  "H:/SDMs/SDMs_future/Predictors/BIO5_microclimate_euForests_2071_2100_ssp370.tif"
   )
 micro_bio6 <- rast(
-  "D:/PhD/Data/SDMs_current/Predictors/Micro_BIO6_EU_CHELSAbased_2000-2020.tif"
+  "H:/SDMs/SDMs_future/Predictors/BIO6_microclimate_euForests_2071_2100_ssp370.tif"
 )
 chelsa_bio12 <- rast(
-  "D:/PhD/Data/SDMs_current/Predictors/CHELSA_bio12_EU_2000-2019.tif"
+  "H:/SDMs/SDMs_future/Predictors/2071-2100chelsaBIO12_EUforests_25m.tif"
 )
 chelsa_bio15 <- rast(
-  "D:/PhD/Data/SDMs_current/Predictors/CHELSA_bio15_EU_2000-2019.tif"
+  "H:/SDMs/SDMs_future/Predictors/2071-2100chelsaBIO15_EUforests_25m.tif"
 )
-cec <- rast("D:/PhD/Data/SDMs_current/Predictors/cec.tif")
-clay <- rast("D:/PhD/Data/SDMs_current/Predictors/clay.tif")
+cec <- rast("H:/SDMs/SDMs_current/Predictors/cec.tif")
+clay <- rast("H:/SDMs/SDMs_current/Predictors/clay.tif")
 
-slope <- rast("F:/SDMs/SDMs_current/Predictors/Slope.tif")
-elevation <- rast("F:/SDMs/SDMs_current/Predictors/Elevation.tif")
+slope <- rast("H:/SDMs/SDMs_current/Predictors/Slope.tif")
+elevation <- rast("H:/SDMs/SDMs_current/Predictors/Elevation.tif")
+
+ph2o <- rast("H:/SDMs/SDMs_current/Predictors/phh2o_0_30_WeightedMean.tif")
+twi <- rast("H:/SDMs/SDMs_current/Predictors/TWI.tif")
 
 plot(cec)
 plot(clay)
@@ -32,7 +35,7 @@ region_bio5 <- crop(micro_bio5, region)
 region_bio5 <- mask(region_bio5, region)
 writeRaster(
   region_bio5,
-  "I:/SDMs_France/Predictors/fr_bio5.tif",
+  "I:/SDM_test/belgium/Predictors/be_bio5.tif",
   overwrite = TRUE
 )
 
@@ -40,7 +43,7 @@ region_bio6 <- crop(micro_bio6, region)
 region_bio6 <- mask(region_bio6, region)
 writeRaster(
   region_bio6,
-  "I:/SDMs_France/Predictors/fr_bio6.tif",
+  "I:/SDM_test_future/belgium/Predictors/be_bio6.tif",
   overwrite = TRUE
 )
 
@@ -48,7 +51,7 @@ region_bio12 <- crop(chelsa_bio12, region)
 region_bio12 <- mask(region_bio12, region)
 writeRaster(
   region_bio12,
-  "I:/SDMs_France/Predictors/fr_bio12.tif",
+  "I:/SDM_test_future/belgium/Predictors/be_bio12.tif",
   overwrite = TRUE
 )
 
@@ -56,7 +59,7 @@ region_bio15 <- crop(chelsa_bio15, region)
 region_bio15 <- mask(region_bio15, region)
 writeRaster(
   region_bio15,
-  "I:/SDMs_France/Predictors/fr_bio15.tif",
+  "I:/SDM_test_future/belgium/Predictors/be_bio15.tif",
   overwrite = TRUE
 )
 
@@ -64,7 +67,7 @@ cec_region <- crop(cec, region)
 cec_region <- mask(cec_region, region)
 writeRaster(
   cec_region,
-  "I:/SDMs_France/Predictors/cec_fr.tif",
+  "I:/SDM_test_future/belgium/Predictors/be_cec.tif",
   overwrite = TRUE
 )
 
@@ -73,13 +76,49 @@ clay_region <- mask(clay_region, region)
 plot(clay_region)
 writeRaster(
   clay_region,
-  "I:/SDMs_France/Predictors/clay_fr.tif",
+  "I:/SDM_test_future/belgium/Predictors/be_clay.tif",
+  overwrite = TRUE
+)
+
+eleva_region <- crop(elevation, region)
+eleva_region <- mask(eleva_region, region)
+plot(eleva_region)
+writeRaster(
+  eleva_region,
+  "I:/SDM_test_future/belgium/Predictors/be_elevation.tif",
+  overwrite = TRUE
+)
+
+slope_region <- crop(slope, region)
+slope_region <- mask(slope_region, region)
+plot(slope_region)
+writeRaster(
+  slope_region,
+  "I:/SDM_test_future/belgium/Predictors/be_slope.tif",
+  overwrite = TRUE
+)
+
+ph_region <- crop(ph2o, region)
+ph_region <- mask(ph_region, region)
+plot(ph_region)
+writeRaster(
+  ph_region,
+  "I:/SDM_test_future/belgium/Predictors/be_ph2o.tif",
+  overwrite = TRUE
+)
+
+twi_region <- crop(twi, region)
+twi_region <- mask(twi_region, region)
+plot(twi_region)
+writeRaster(
+  twi_region,
+  "I:/SDM_test_future/belgium/Predictors/be_twi.tif",
   overwrite = TRUE
 )
 
 # Crop the topography predictors to EU forests.
 # First test the correlation between predictors.
-elevation <- rast("H:/Input/Predictors_microclimate/elevation.tif")
+elevation <- rast("G:/Input/Predictors_microclimate/elevation.tif")
 relat_elev <- rast("G:/Input/Predictors_microclimate/relative_elevation.tif")
 slope <- rast("G:/Input/Predictors_microclimate/slope.tif")
 twi <- rast("D:/Input/Predictors_microclimate/TWI.tif")
@@ -89,7 +128,6 @@ micro_bio5 <- rast("G:/SDMs/SDMs_current/Predictors/Micro_BIO5_EU_CHELSAbased_20
 micro_bio6 <- rast("G:/SDMs/SDMs_current/Predictors/Micro_BIO6_EU_CHELSAbased_2000-2020.tif")
 chelsa_bio12 <- rast("G:/SDMs/SDMs_current/Predictors/CHELSA_bio12_EU_2000-2019.tif")
 chelsa_bio15 <- rast("G:/SDMs/SDMs_current/Predictors/CHELSA_bio15_EU_2000-2019.tif")
-soilpH_0_5 <- rast("H:/SoilGrids_Stef/phh2o_0-5cm_mean.tif")
 
 # 2. bundle them in a named list
 r_list <- list(
@@ -159,7 +197,7 @@ corrplot(
 elevation <- rast("G:/Input/Predictors_microclimate/elevation.tif")
 slope <- rast("G:/Input/Predictors_microclimate/slope.tif")
 micro_bio5 <- rast("G:/SDMs/SDMs_current/Predictors/Micro_BIO5_EU_CHELSAbased_2000-2020.tif")
-elev_tmp <- rast("H:/SDMs/SDMs_current/Predictors/Elevation.tif")
+
 # mask out the non-forests area.
 slope_forest <- mask(slope, micro_bio5)
 eleva_forest <- mask(elevation, micro_bio5)
@@ -181,68 +219,3 @@ twi <- rast("D:/Input/Predictors_microclimate/TWI.tif")
 micro_bio5 <- rast("D:/Output/SDM_bioclim/BIO5BIO6/present/Micro_BIO5_EU_25m_2000-2020_recalculated.tif")
 twi_forest <- mask(twi, micro_bio5)
 writeRaster(twi_forest, "D:/SDMs/SDMs_current/Predictors/TWI.tif", overwrite = TRUE)
-
-#################################
-# Crop the soil pH data from Stef.
-#################################
-
-# Use elevation data as a template.
-elevation <- rast("H:/SDMs/SDMs_current/Predictors/Elevation.tif")
-soilpH_0_5 <- rast("H:/SoilGrids_Stef/phh2o_0-5cm_mean.tif")
-soilpH_5_15 <- rast("H:/SoilGrids_Stef/phh2o_5-15cm_mean.tif")
-soilpH_15_30 <- rast("H:/SoilGrids_Stef/phh2o_15-30cm_mean.tif")
-eu_shp <- vect("H:/EuropeShapefile/Shapefiles/Europe.shp")
-
-# 1) Crop & mask soil to Europe in the SOIL CRS
-eu_in_soil <- project(eu_shp, crs(soilpH_0_5))      # reproject Europe polygon to soil CRS
-# small no-op buffer avoids tiny slivers at boundaries after reprojection
-eu_in_soil <- buffer(eu_in_soil, 0)
-
-# For soil depth between 0-5 cm.
-soilpH_05_crop <- crop(soilpH_0_5, eu_in_soil)
-soil_05_eu <- mask(soilpH_05_crop, eu_in_soil)
-# 2) Reproject + resample to the elevation grid (same CRS, res, extent, alignment)
-# Soil pH is continuous → bilinear interpolation
-soil_05_reproj <- project(soil_05_eu, crs(elevation))
-soil_05_resamp <- resample(soil_05_reproj, elevation, method="bilinear")
-
-# 3) (Optional) enforce the exact Europe mask in the TARGET CRS (EPSG:3035)
-soil_05_mask <- mask(soil_05_resamp, elevation)
-soil_05_round <- round(soil_05_mask, digits = 0)
-# Save raster
-writeRaster(soil_05_round, 
-            "H:/SoilGrids_Stef/euForests/phh2o_0-5cm_mean_eu_25m_rounded.tif",
-            overwrite = TRUE)
-
-#### For soil depth between 5-15 cm. ####
-soilpH_515_crop <- crop(soilpH_5_15, eu_in_soil)
-soil_515_eu <- mask(soilpH_515_crop, eu_in_soil)
-# 2) Reproject + resample to the elevation grid (same CRS, res, extent, alignment)
-# Soil pH is continuous → bilinear interpolation
-soil_515_reproj <- project(soil_515_eu, crs(elevation))
-soil_515_resamp <- resample(soil_515_reproj, elevation, method="bilinear")
-
-# 3) (Optional) enforce the exact Europe mask in the TARGET CRS (EPSG:3035)
-soil_515_mask <- mask(soil_515_resamp, elevation)
-soil_515_round <- round(soil_515_mask, digits = 0)
-
-# Save raster
-writeRaster(soil_515_round, 
-            "H:/SoilGrids_Stef/euForests/phh2o_5-15cm_mean_eu_25m_rounded02.tif",
-            overwrite = TRUE)
-
-#### For soil depth between 15-30 cm.####
-soilpH_1530_crop <- crop(soilpH_15_30, eu_in_soil)
-soil_1530_eu <- mask(soilpH_1530_crop, eu_in_soil)
-# 2) Reproject + resample to the elevation grid (same CRS, res, extent, alignment)
-# Soil pH is continuous → bilinear interpolation
-soil_1530_reproj <- project(soil_1530_eu, crs(elevation))
-soil_1530_resamp <- resample(soil_1530_reproj, elevation, method="bilinear")
-
-# 3) (Optional) enforce the exact Europe mask in the TARGET CRS (EPSG:3035)
-soil_1530_mask <- mask(soil_1530_resamp, elevation)
-soil_1530_round <- round(soil_1530_mask, digits = 0)
-# Save raster
-writeRaster(soil_1530_round, 
-            "H:/SoilGrids_Stef/euForests/phh2o_15-30cm_mean_eu_25m_rounded.tif",
-            overwrite = TRUE)

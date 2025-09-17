@@ -2,7 +2,7 @@
 library(openxlsx)  # install.packages("openxlsx") if not already installed
 
 # Define the folder path
-folder_path <- "D:/SDMs/SDMs_current/Occurrences_done"
+folder_path <- "I:/DATA/Occurrences_cleaned"
 
 # List all .csv files in the folder
 csv_files <- list.files(path = folder_path, pattern = "\\.csv$", full.names = FALSE)
@@ -20,3 +20,13 @@ output_file <- file.path("I:/DATA", "species_names_SDMs.xlsx")
 write.xlsx(species_df, file = output_file, rowNames = FALSE)
 
 cat("Species names saved to:", output_file, "\n")
+
+# Create folder for each species to store the prediction results.
+# Create new folders for each species
+result_path <- "D:/SDMs/SDMs_current/Results/Species_tiles"
+for (sp in species_names) {
+  new_dir <- file.path(result_path, sp)
+  if (!dir.exists(new_dir)) {
+    dir.create(new_dir)
+  }
+}
