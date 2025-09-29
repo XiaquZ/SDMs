@@ -1,67 +1,63 @@
-#### Loop through each speceis tile folder to get final map. ####
-library(foreach)
-library(doParallel)
 library(terra)
 
-# Define paths
-input_dir <- "F:/Output/fut_SDMs/species_tiles/"
-output_dir <- "F:/Output/fut_SDMs/species_final/"
+# Merge all tiles per species folder and save to an output folder
+merge_species_tiles <- function(tiles_root,
+                                out_dir,
+                                pattern = "\\.tif$",
+                                
+                                crs_epsg = "EPSG:3035",
+                                overwrite = TRUE) {
+  # make sure output folder exists
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
-# extract species names from the file names.
-folder_path <- "D:/SDMs/SDMs_current/Occurrences_done"
+  # list immediate subfolders; each subfolder = one species
+  species_dirs <- list.dirs(tiles_root, recursive = FALSE, full.names = TRUE)
 
-# List all .csv files in the folder
-csv_files <- list.files(path = folder_path, pattern = "\\.csv$", full.names = FALSE)
+  if (length(species_dirs) == 0) {
+    message("No species folders found in: ", tiles_root)
+    return(invisible(NULL))
+  }
 
-# Remove the '.csv' extension to extract species names
-species_names <- tools::file_path_sans_ext(csv_files)
+  for (sd in species_dirs) {
+    species <- basename(sd)
+    t.lst <- list.files(sd, pattern = pattern, full.names = TRUE)
 
-# List species tiles
-species_tiles <- list.files(input_dir, full.names = TRUE)
-species_names <- unique(basename(species_tiles))
+    if (length(t.lst) == 0) {
+      message("Skipping '", species, "': no matching tiles.")
+      next
+    }
 
-# Set up parallel backend
-# For PC:
-cl <- makeCluster(detectCores() - 6)
-registerDoParallel(cl)
+    message("Merging ", length(t.lst), " tiles for species: ", species)
 
-# Parallel processing
-foreach(
-  species = species_names,
-  .packages = "terra",
-  .errorhandling = "pass"  # Continue on error, but log it
-) %dopar% {
-  tryCatch({
-    # Read in the paths of all SDM tiles.
-    # Filter tiles for the current species
-    t.list <- list.files(
-      paste0(input_dir, species), 
-      pattern = ".tif", full.names = T
-    )
-    
-    # Merge and process raster
-    r <- vrt(t.list)
-    r <- round(r, digits = 1)
-    
-    # Define output file path
-    fout <- file.path(paste0(output_dir,species, "_predictedSDMs_2071-2100_ssp370_25m.tif"))
-    
-    # Write the raster
-    writeRaster(r, fout, overwrite = TRUE)
-    
-    # Log success
-    message("Successfully processed: ", species)
-  }, error = function(e) {
-    # Log error
-    message("Error processing ", species, ": ", e$message)
-  })
+    # Build a virtual mosaic and write out a real raster
+    # (vrt() avoids loading all tiles into memory at once)
+    r <- try(vrt(t.lst), silent = TRUE)
+    if (inherits(r, "try-error")) {
+      message("  ❌ Failed to build VRT for '", species, "'. Skipping.")
+      next
+    }
+
+    # Round and set CRS
+    crs(r) <- crs_epsg
+
+    # Output file path
+    fout <- file.path(out_dir, paste0(species, ".tif"))
+
+    # Write; this materializes the VRT mosaic to disk
+    tryCatch({
+      writeRaster(r, fout, overwrite = overwrite)
+      message("  ✅ Wrote: ", fout)
+    }, error = function(e) {
+      message("  ❌ Failed to write '", species, "': ", conditionMessage(e))
+    })
+  }
+
+  invisible(NULL)
 }
 
-# Stop the cluster
-stopCluster(cl)
+# ---------- Use it ----------
+# Each subfolder under 'Species_tiles' should be a species name containing its tiles
+tiles_root <- "D:/SDMs/SDMs_current/Results/Species_tiles"
+out_dir    <- "D:/SDMs/SDMs_current/Results/Species_final"
 
-# Final message
-message("All species processed.")
-
-# test
-species <- "Brachypodium_sylvaticum" 
+merge_species_tiles(tiles_root, out_dir)

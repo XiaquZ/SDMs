@@ -180,10 +180,7 @@ fn <- file.path(output_dir,
 save(e.swd, file = fn)
 }
 
-########################
-#### Produce matrix ####
-########################
-metrics <- data.frame(Species = character(), CBI = numeric(), Sensitivity = numeric())
+#### Predict best model(s) to raster ####
 
 # Select best model by delta.AICc
 res <- eval.results(e.swd)
@@ -230,7 +227,10 @@ n_best_models <- length(best.idx)
 #   writeRaster(pred_ras, out_file, overwrite = TRUE)
 # }
  
-
+########################
+#### Produce matrix ####
+########################
+metrics <- data.frame(Species = character(), CBI = numeric(), Sensitivity = numeric())
 ### === Threshold (10 percentile training presence) === ###
 occs_probs <- terra::extract(pred_ras, internal, ID = FALSE)
 or.10p.avg <- quantile(occs_probs, probs = 0.1, na.rm = TRUE)
