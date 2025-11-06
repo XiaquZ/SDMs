@@ -2,8 +2,8 @@ library(terra)
 
 # Load template for resampling
 template <- rast("H:/Input/ForestTemp_new/01_Offsets/mean_annualOffset.tif")
-macro_bio5 <- rast("H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio5_EU_2000-2019.tif")
-macro_bio6 <- rast("H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio6_EU_2000-2019.tif")
+macro_bio5 <- rast("H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio5_EU_2000-2019.tif")# Actually from 2018.
+macro_bio6 <- rast("H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio6_EU_2000-2019.tif")# Actually from 2018.
 macro_bio12 <- rast("H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio12_EU_2000-2019.tif")
 macro_bio15 <- rast("H:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_bio15_EU_2000-2019.tif")
 forest <- rast("H:/Output/forestBIO1_convertedTO0_25m.tif")

@@ -17,7 +17,6 @@ in_dir  <- "I:/DATA/Occurrences_cleaned"           # where the CSVs live
 out_dir <- "I:/DATA/output/ConvexHull"             # where shapefiles go
 eu_shp  <- "I:/EUshap/Europe.shp"                  # (optional) EU coastlines
 
-
 # Create output folder if it doesn't exist
 if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
@@ -32,23 +31,30 @@ head(occ)
 # 1. Convert occurrence data frame to SpatVector
 occ_vect <- vect(occ, geom = c("Longitude", "Latitude"), crs = "EPSG:3035")
 
+# writeVector(occ_vect, 
+#             "I:/Figures_SDMs/Actaea_spicata_occurrence.shp", 
+#             overwrite = TRUE)
+
 # 2. Plot the shapefile
 plot(
   eu,
   col = "lightgrey", border = "darkgrey",
-  main = "Actaea spicata Occurrences in Europe"
+  main = "Actaea moschatellina Occurrences in Europe"
 )
 
 # 3. Add the occurrence points
 points(occ_vect, col = "red", pch = 20, cex = 0.7)
 
 # minimum convex polygon method
-conh <- hull(occ_vect, "concave_ratio", param = 0.7)
+conh <- hull(occ_vect, "concave_ratio", param = 0.55)
+conh_buffer <- buffer(conh, 75000)
+writeVector(conh_buffer, "I:/Figures_SDMs/Actaea_spicata_hullBuffer.shp", overwrite = TRUE)
 # 4. Add convex hull (calibration area)
-lines(conh, col = "blue", lwd = 2)
+lines(conh_buffer, col = "blue", lwd = 2)
 
-
-
+###################################################
+####Run through all the species on a for loop. ####
+###################################################
 ## ─── 3. LIST ALL CSV FILES ───────────────────────────────────────────────────
 csvs <- list.files(in_dir, pattern = "\\.csv$", full.names = TRUE)
 if (length(csvs) == 0) stop("No CSV files found in ", in_dir)
@@ -80,25 +86,39 @@ for (csv in csvs) {
   
   ## 4c. Build the hull --------------------------------------------------------
   # Choose one of the two lines below:
-  hull_poly <- convHull(pts)                     # classic convex hull         #
-  # hull_poly <- hull(pts, type = "concave", alpha = 1)   # tighter concave hull
+  # hull_poly <- convHull(pts)                     # classic convex hull         #
+  conh_poly <- hull(pts, "concave_ratio", param = 0.55)   # tighter concave hull
   
   ## 4d. Write shapefile -------------------------------------------------------
   sp_name <- gsub("\\s+", "_", file_path_sans_ext(basename(csv)))  # clean name
   out_file <- file.path(out_dir, paste0(sp_name, "_ConvexHull.shp"))
+  # 2. Plot the shapefile
+  plot(
+    eu,
+    col = "lightgrey", border = "darkgrey",
+    main = paste0(sp_name, " Occurrences in Europe")
+  )
   
-  writeVector(hull_poly, out_file, overwrite = TRUE)
+  # 3. Add the occurrence points
+  points(pts, col = "red", pch = 20, cex = 0.7)
+  # 4. Add convex hull (calibration area)
+  lines(conh_poly, col = "blue", lwd = 2)
+  
+  writeVector(conh_poly, out_file, overwrite = TRUE)
   cat("  ✔ saved to", out_file, "\n")
   
 }
 
 cat("\nDone! All hulls exported to: ", out_dir, "\n")
 
+####################################################################
 #### Check the output by plotting one of the saved convex hulls.####
+####################################################################
+
 # 1. Paths
 shp_dir <- "I:/DATA/output/ConvexHull"
 csv_dir <- "I:/DATA/Occurrences_cleaned"
-eu  <- vect("I:/EUshap/Europe.shp")  
+eu  <- vect("I:/EUshap/Europe.shp")
 
 # 3. List shapefiles
 shapefiles <- list.files(shp_dir, pattern = "_ConvexHull\\.shp$", full.names = TRUE)
@@ -138,3 +158,4 @@ for (shp_path in shapefiles) {
   cat("Press [Enter] to continue to the next species...")
   readline()
 }
+hull <- vect("I:/DATA/output/ConvexHull/Actaea_spicata_ConvexHull.shp")

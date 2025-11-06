@@ -4,7 +4,7 @@ library(dismo)
 
 # Set your input folder path
 #### For tasmin during 2000-2019.####
-root <- "D:/PhD/Data/CHELSA_monthly"
+root <- "G:/PhD/Data/CHELSA_monthly"
 
 files_tasmax <- list.files(file.path(root, "tasmax2000-2019"),
                            pattern = "\\.tif$", full.names = TRUE)
@@ -102,6 +102,9 @@ eu_shp <- vect("I:/EUshap/Europe.shp")
 
   # ------------------ BIO5, BIO6, BIO12, BIO15 for 2000–2018 via biovars ------------------
   # Align to common timestamps
+  r_tmax_final <- rast("D:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_EU_Monthly_tmax_2000_2019_scaled.tif")
+  r_tmin <- rast("D:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_EU_Monthly_tmin_2000_2019_scaled.tif")
+  r_prec_final <- rast("D:/Input/CHELSAdata/BIOclim2000-2019/CHELSA_EU_Monthly_prec_2000_2018_scaled.tif")
   t_common <- Reduce(intersect, list(time(r_tmax_final), time(r_tmin), time(r_prec_final)))
   tasmax_c <- r_tmax_final[[ which(time(r_tmax_final) %in% t_common) ]]
   tasmin_c <- r_tmin[[ which(time(r_tmin) %in% t_common) ]]
@@ -118,11 +121,16 @@ eu_shp <- vect("I:/EUshap/Europe.shp")
   #################################################
   # Run biovars on climatologies
   bio_c <- biovars(prec = stack(prec12_c), tmin = stack(tmin12_c), tmax = stack(tmax12_c))
+  writeRaster(bio_c, "G:/PhD/Data/CHELSA_monthly/CHELSA_bioclim_2000_2018.tif",overwrite = TRUE)
   
   BIO5_2000_2018  <- rast(bio_c[[5 ]]); names(BIO5_2000_2018)  <- "BIO5_CHELSA_2000_2018"
   BIO6_2000_2018  <- rast(bio_c[[6 ]]); names(BIO6_2000_2018)  <- "BIO6_CHELSA_2000_2018"
   BIO12_2000_2018 <- rast(bio_c[[12]]); names(BIO12_2000_2018) <- "BIO12_CHELSA_2000_2018"
   BIO15_2000_2018 <- rast(bio_c[[15]]); names(BIO15_2000_2018) <- "BIO15_CHELSA_2000_2018"
+  BIO13_2000_2018 <- rast(bio_c[[13]]); names(BIO13_2000_2018) <- "BIO13_CHELSA_2000_2018"
+  BIO14_2000_2018 <- rast(bio_c[[14]]); names(BIO14_2000_2018) <- "BIO14_CHELSA_2000_2018"
+  BIO16_2000_2018 <- rast(bio_c[[16]]); names(BIO16_2000_2018) <- "BIO16_CHELSA_2000_2018"
+  BIO17_2000_2018 <- rast(bio_c[[17]]); names(BIO17_2000_2018) <- "BIO17_CHELSA_2000_2018"
   
   # Save Rasters.
   writeRaster(BIO12_2000_2018, 
@@ -173,8 +181,44 @@ eu_shp <- vect("I:/EUshap/Europe.shp")
   writeRaster(BIO6_0018_round,
               "D:/PhD/Data/Output/CHELSA/BIO6_CHELSA_2000_2018_epsg3035_25m_1digit.tif",
               overwrite = TRUE)
-  
-  
-#### For CHELSA ssp370 2071-2100. ####
 
-
+  # BIO13 2000-2018
+  BIO13_0018_repro <- project(BIO13_2000_2018, crs(forest))
+  show(BIO13_0018_repro)
+  BIO13_0018_resamp <- resample(BIO13_0018_repro, forest, method = "bilinear")
+  BIO13_0018_mask <- mask(BIO13_0018_resamp, forest)
+  BIO13_0018_round <- round(BIO13_0018_mask, digits = 1)
+  writeRaster(BIO13_0018_round,
+              "G:/PhD/Data/Output/CHELSA/BIO13_CHELSA_2000_2018_epsg3035_25m_1digit.tif",
+              overwrite = TRUE)
+  
+  # BIO14 2000-2018
+  BIO14_0018_repro <- project(BIO14_2000_2018, crs(forest))
+  show(BIO14_0018_repro)
+  BIO14_0018_resamp <- resample(BIO14_0018_repro, forest, method = "bilinear")
+  BIO14_0018_mask <- mask(BIO14_0018_resamp, forest)
+  BIO14_0018_round <- round(BIO14_0018_mask, digits = 1)
+  writeRaster(BIO14_0018_round,
+              "G:/PhD/Data/Output/CHELSA/BIO14_CHELSA_2000_2018_epsg3035_25m_1digit.tif",
+              overwrite = TRUE)
+  
+  # BIO16 2000-2018
+  BIO16_0018_repro <- project(BIO16_2000_2018, crs(forest))
+  show(BIO16_0018_repro)
+  BIO16_0018_resamp <- resample(BIO16_0018_repro, forest, method = "bilinear")
+  BIO16_0018_mask <- mask(BIO16_0018_resamp, forest)
+  BIO16_0018_round <- round(BIO16_0018_mask, digits = 1)
+  writeRaster(BIO16_0018_round,
+              "G:/PhD/Data/Output/CHELSA/BIO16_CHELSA_2000_2018_epsg3035_25m_1digit.tif",
+              overwrite = TRUE)
+  
+  # BIO17 2000-2018
+  BIO17_0018_repro <- project(BIO17_2000_2018, crs(forest))
+  show(BIO17_0018_repro)
+  BIO17_0018_resamp <- resample(BIO17_0018_repro, forest, method = "bilinear")
+  BIO17_0018_mask <- mask(BIO17_0018_resamp, forest)
+  BIO17_0018_round <- round(BIO17_0018_mask, digits = 1)
+  writeRaster(BIO17_0018_round,
+              "G:/PhD/Data/Output/CHELSA/BIO17_CHELSA_2000_2018_epsg3035_25m_1digit.tif",
+              overwrite = TRUE)
+  
