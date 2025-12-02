@@ -11,7 +11,7 @@ library(tools)
 ####################################################################################
 
 # Define directory paths
-base_dir <- "D:/SDMs/SDMs_future/"
+base_dir <- "E:/SDMs/SDMs_current/"
 occ_path <- file.path(base_dir, "Occurrences_cleaned")
 output_dir <- file.path(base_dir, "Results/Metrics")
 species_final <- file.path(base_dir, "Results/Species_final")
@@ -82,8 +82,8 @@ find_species_raster_unique <- function(sp, root_dir, prefer = c("_current", "_pr
 #   stringsAsFactors = FALSE
 # )
 
-## If already had metric file in the folder:
-metrics <- read.csv(paste0(output_dir)"/SDMs_metrics_summary.csv")
+## If already had metric files in the folder:
+metrics <- read.csv(paste0(output_dir, "/SDMs_metrics_summary.csv"))
 
 get_species_tif <- function(sp, dir) {
   sp_clean <- sub("\\.csv$", "", sp)  # drop .csv if present
@@ -102,7 +102,7 @@ get_species_tif <- function(sp, dir) {
 }
 
 for (r in seq_along(occurrence.files)) {
-  cat("Processing:", occurrence.names[r], "\n")
+  cat("Processing:", species_names[r], "\n")
 
 species_df <- read.csv(occurrence.files[r])
 occs_coords <- species_df[, c("Longitude", "Latitude")]
@@ -123,7 +123,7 @@ internal <- occs_coords[-test_idx, ]
 ### === Threshold (10 percentile training presence) === ###
  # Path to prediction raster
 # ✅ pass the species name (includes ".csv"; helper will strip it)
-pred_file <- get_species_tif(occurrence.names[r], species_final)
+pred_file <- get_species_tif(species_names[r], species_final)
 cat("  matched tif:", pred_file, "\n")  # quick sanity print
 
 if (is.na(pred_file) || !file.exists(pred_file)) {
@@ -133,17 +133,22 @@ if (is.na(pred_file) || !file.exists(pred_file)) {
 
 pred_ras <- rast(pred_file)
 occs_probs <- terra::extract(pred_ras, internal, ID = FALSE)
-or.10p.avg <- quantile(occs_probs, probs = 0.1, na.rm = TRUE)
+or.10p.avg <- as.numeric(quantile(occs_probs, probs = 0.1, na.rm = TRUE))
 
  # Produce binary maps
 binary_ras <- pred_ras
 binary_ras[binary_ras <= or.10p.avg] <- 0
 binary_ras[binary_ras > or.10p.avg] <- 1
-plot(binary_ras)
+names(binary_ras) <- paste0("Binary_", species_names[r])
 
 if (save_rasters) {
-  bin_file <- file.path(output_dir, paste0("binary_", occurrence.tif[r]))
-  writeRaster(binary_ras, bin_file, overwrite = TRUE)
+  bin_file <- file.path(output_dir, paste0("binary_", species_names[r], ".tif"))
+  writeRaster(
+    binary_ras,
+    bin_file,
+    datatype  = "INT1U",
+    gdal = c("COMPRESS=DEFLATE", "ZLEVEL=9", "PREDICTOR=2"),
+    overwrite = TRUE)
 }
 
 ### === CBI (using external data) === ###
@@ -189,7 +194,7 @@ sensitivity <- sum(predicted_classes == 1) / length(predicted_classes)
 
 ### === Store metrics === ###
 metrics <- rbind(metrics, data.frame(
-  Species = occurrence.names[r],
+  Species = species_names[r],
   CBI = CBI,
   Sensitivity = sensitivity,
   Threshold_10pct = or.10p.avg
@@ -206,6 +211,6 @@ rm(list = ls()[!ls() %in% c(
 }
 # Save metrics summary
 write.csv(metrics,
-          file.path(output_dir, "SDMs_metrics_summary.csv"),
+          file = file.path(output_dir, "SDMs_Metrics_Summary.csv"),
           row.names = FALSE)
 r_test <- rast("D:/SDMs/SDMs_current/Results/Species_final/Brachypodium sylvaticum.tif")
