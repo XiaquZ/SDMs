@@ -181,7 +181,7 @@ save(e.swd, file = fn)
 }
 
 #### Predict best model(s) to raster ####
-
+mdl <- load("I:/DATA/SDM_current/models/Diplazium sibiricum_ENMeval_swd.RData")
 # Select best model by delta.AICc
 res <- eval.results(e.swd)
 

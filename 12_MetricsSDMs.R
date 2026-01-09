@@ -11,7 +11,7 @@ library(tools)
 ####################################################################################
 
 # Define directory paths
-base_dir <- "E:/SDMs/SDMs_current/"
+base_dir <- "G:/SDMs/SDMs_future/"
 occ_path <- file.path(base_dir, "Occurrences_cleaned")
 output_dir <- file.path(base_dir, "Results/Metrics")
 species_final <- file.path(base_dir, "Results/Species_final")
@@ -41,7 +41,7 @@ rm(list = ls()[!ls() %in% c(
 ####################################################################################
 escape_regex <- function(x) gsub("([][{}()+*^$|\\.?\\\\])", "\\\\\\1", x)
 
-find_species_raster_unique <- function(sp, root_dir, prefer = c("_current", "_present", "")) {
+find_species_raster_unique <- function(sp, root_dir, prefer = c("_current", "_future", "")) {
   all_rasters <- list.files(
     root_dir, pattern = "\\.(tif|tiff)$",
     recursive = TRUE, full.names = TRUE, ignore.case = TRUE
@@ -74,13 +74,13 @@ find_species_raster_unique <- function(sp, root_dir, prefer = c("_current", "_pr
 
 # Create empty data.frame for storing metrics output.
 # 1) init once
-# metrics <- data.frame(
-#   Species = character(),
-#   CBI = numeric(),
-#   Sensitivity = numeric(),
-#   Threshold_10pct = numeric(),
-#   stringsAsFactors = FALSE
-# )
+metrics <- data.frame(
+  Species = character(),
+  CBI = numeric(),
+  Sensitivity = numeric(),
+  Threshold_10pct = numeric(),
+  stringsAsFactors = FALSE
+)
 
 ## If already had metric files in the folder:
 metrics <- read.csv(paste0(output_dir, "/SDMs_metrics_summary.csv"))
@@ -101,6 +101,10 @@ get_species_tif <- function(sp, dir) {
   all_tifs[hits[1]]
 }
 
+## Add terra Options to fix the std::bad_alloc.##
+terraOptions(memfrac=0.6, memmin = 70, verbose=T, print=TRUE)
+
+#### For loop to get the metrics and binary maps.####
 for (r in seq_along(occurrence.files)) {
   cat("Processing:", species_names[r], "\n")
 
@@ -136,9 +140,15 @@ occs_probs <- terra::extract(pred_ras, internal, ID = FALSE)
 or.10p.avg <- as.numeric(quantile(occs_probs, probs = 0.1, na.rm = TRUE))
 
  # Produce binary maps
+# binary_ras <- pred_ras
+# binary_ras[binary_ras <= or.10p.avg] <- 0
+# binary_ras[binary_ras > or.10p.avg] <- 1
+# names(binary_ras) <- paste0("Binary_", species_names[r])
+
 binary_ras <- pred_ras
-binary_ras[binary_ras <= or.10p.avg] <- 0
-binary_ras[binary_ras > or.10p.avg] <- 1
+binary_ras <- ifel(binary_ras > or.10p.avg, 1,
+                   ifel(binary_ras <= or.10p.avg, 0, NA)
+                   )
 names(binary_ras) <- paste0("Binary_", species_names[r])
 
 if (save_rasters) {
@@ -213,4 +223,4 @@ rm(list = ls()[!ls() %in% c(
 write.csv(metrics,
           file = file.path(output_dir, "SDMs_Metrics_Summary.csv"),
           row.names = FALSE)
-r_test <- rast("D:/SDMs/SDMs_current/Results/Species_final/Brachypodium sylvaticum.tif")
+r_test <- rast("M:/SDMs/SDMs_current/Results/Metrics/binary_Viola reichenbachiana.tif")
