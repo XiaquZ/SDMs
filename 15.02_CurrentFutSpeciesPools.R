@@ -1,14 +1,7 @@
 library(terra)
 
 #### Change in size of species pools based on all species. ####
-filelist_binarized <- list.files(
-    path = "G:/SDMs/SDMs_future/Results/BinaryMaps_original/",
-    pattern = "\\.tif$",
-    full.names = TRUE
-)
-test <- rast(filelist_binarized) 
-
-
+# 1) Align all current binary maps to common extent/resolution/CRS.
 # --- compute union extent without stacking (cheap)
 exts <- lapply(filelist_current.binarized, function(f) ext(rast(f)))
 e_union <- Reduce(terra::union, exts)
@@ -85,7 +78,7 @@ aligned_files02 <- vapply(seq_along(align01.lst), function(i) {
 
 ## Test if all rasters can be stacked now. ##
 align_binarized <- list.files(
-  path = "G:/SDMs/SDMs_current/Results/OriginalBinaryMaps_NOTalign/",
+  path = "G:/SDMs/SDMs_current/Results/Binary_SpeciesCurrentAtualDistri/",
   pattern = "\\.tif$",
   full.names = TRUE
 )
@@ -96,7 +89,7 @@ sum_r <- app(align_binarized, sum, na.rm = TRUE)
 
 writeRaster(
   sum_r,
-  filename = "SpeciesPool_current_137species.tif",
+  filename = "G:/SDMs/SDMs_current/Results/SpeciesPool_current_140species.tif",
   overwrite = TRUE,
   datatype = "INT1U",  # unsigned 8-bit: exact for 0..255
   wopt = list(
@@ -141,3 +134,38 @@ writeRaster(
     )
   )
 )
+
+#### For RedList species only. ####
+rl_species <- read.csv(
+  header = TRUE,
+  "I:/RedListSpecies/RL_forest_species.csv",
+   sep = ";",
+   row.names = 1)
+head(rl_species)
+
+## Select CR, EN, VU, R and NT species. ##
+rl_selected <- rl_species[
+  rl_species$median_redlist_text %in% c("CR", "EN", "VU", "R", "NT"),
+  ]
+head(rl_selected)
+
+## Calculate the species pool for the selected RedList species only. ##
+rl_species_names <- rl_selected$Species
+rl_species_names <- gsub(" ", "_", rl_species_names)
+
+ras_dir <- "G:/SDMs/SDMs_current/Results/Binary_SpeciesCurrentAtualDistri/"
+ras_files <- list.files(
+  ras_dir,
+  pattern = "\\.tif$",
+  full.names = TRUE
+)
+
+matched_rasters <- ras_files[
+  vapply(
+    ras_files,
+    function(f) {
+      any(grepl(rl_species_names, basename(f), fixed = TRUE))
+    },
+    logical(1)
+  )
+]

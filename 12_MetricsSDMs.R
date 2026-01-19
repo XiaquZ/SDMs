@@ -11,9 +11,9 @@ library(tools)
 ####################################################################################
 
 # Define directory paths
-base_dir <- "G:/SDMs/SDMs_future/"
-occ_path <- file.path(base_dir, "Occurrences_cleaned")
-output_dir <- file.path(base_dir, "Results/Metrics")
+base_dir <- "G:/SDMs/SDMs_current/"
+occ_path <- file.path(base_dir, "Occurrences_redo")
+output_dir <- file.path(base_dir, "Results/OriginalBinaryMaps_aligned")
 species_final <- file.path(base_dir, "Results/Species_final")
 save_rasters <- TRUE
 
@@ -223,4 +223,7 @@ rm(list = ls()[!ls() %in% c(
 write.csv(metrics,
           file = file.path(output_dir, "SDMs_Metrics_Summary.csv"),
           row.names = FALSE)
-r_test <- rast("M:/SDMs/SDMs_current/Results/Metrics/binary_Viola reichenbachiana.tif")
+
+# Read the metrics summary.
+metrics_current <- read.csv("I:/DATA/SDM_current/results/CurrentSDMs_Metrics_Summary.csv")
+metrics_future <- read.csv("I:/DATA/SDM_future/FutureSDMs_Metrics_Summary.csv")
