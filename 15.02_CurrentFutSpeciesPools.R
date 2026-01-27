@@ -118,8 +118,8 @@ align_binarized_fut <- rast(align_binarized_fut)
 sum_r_fut <- app(align_binarized_fut, sum, na.rm = TRUE)
 
 writeRaster(
-  sum_r,
-  filename = "SpeciesPool_2071-2100_140SDMs.tif",
+  sum_r_fut,
+  filename = "G:/SDMs/SDMs_future/Results/SpeciesPool_2071-2100_140SDMs_NOrangeConstrained.tif",
   overwrite = TRUE,
   datatype = "INT1U",  # unsigned 8-bit: exact for 0..255
   wopt = list(
@@ -160,12 +160,34 @@ ras_files <- list.files(
   full.names = TRUE
 )
 
-matched_rasters <- ras_files[
-  vapply(
-    ras_files,
-    function(f) {
-      any(grepl(rl_species_names, basename(f), fixed = TRUE))
-    },
-    logical(1)
+pat <- paste0("(", paste(rl_species_names, collapse = "|"), ")")
+
+# Match species name with raster filename. #
+matched_rasters <- ras_files[grepl(pat, basename(ras_files), perl = TRUE)]
+
+rl_stack <- rast(matched_rasters)
+names(rl_stack)
+nlyr(rl_stack)
+## 48 species were listed.
+
+# Rare species current actual species pool. #
+# Stack and sum cell-wise, ignoring NA
+sum_rl <- app(rl_stack, sum, na.rm = TRUE)
+
+writeRaster(
+  sum_rl,
+  filename = "G:/SDMs/SDMs_current/Results/SpeciesPool_RedListSpecies_Current_48SDMs.tif",
+  overwrite = TRUE,
+  datatype = "INT1U",  # unsigned 8-bit: exact for 0..255
+  wopt = list(
+    gdal = c(
+      "COMPRESS=DEFLATE",   # lossless compression (often very good)
+      "PREDICTOR=2",        # helps for integer rasters
+      "ZLEVEL=9",           # max compression (slower write, smaller file)
+      "TILED=YES",          # better I/O for huge rasters
+      "BLOCKXSIZE=512",
+      "BLOCKYSIZE=512",
+      "BIGTIFF=IF_SAFER"    # allows >4GB automatically if needed
+    )
   )
-]
+)
