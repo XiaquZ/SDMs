@@ -1,19 +1,12 @@
 library(dplyr)
 library(rgbif)
 library(openxlsx)
+library(readxl)
+library(writexl)
+library(tidyr)
+library(stringr)
 
-df <- read.delim(
-  "I:\\DATA\\tde202612215846.txt",
-  sep = "\t",
-  header = TRUE,
-  skip = 3,          # skip the metadata lines
-  stringsAsFactors = FALSE
-)
-
-head(df)
-str(df)
-df <- df[, c("AccSpeciesName", "Measurements")]
-colnames(df) <- c("species.name", "age_maturity")
+# Load TRY age of maturity data (long format)
 
 forest_sp <- read.csv(
   "I:\\DATA\\ForestSpecialist.csv",
@@ -21,155 +14,6 @@ forest_sp <- read.csv(
   stringsAsFactors = FALSE
 )
 
-# (optional but recommended) standardise column names + trim spaces
-forest_sp <- forest_sp %>%
-  mutate(species.name = trimws(species.name))
-
-df <- df %>%
-  mutate(species.name = trimws(species.name))
-
-# Check duplicates in df.
-dup_species <- df %>%
-  count(species.name) %>%
-  filter(n > 1) %>%
-  arrange(desc(n))
-any(duplicated(df$species.name)) # FALSE.
-## There are no duplicates.
-
-# join: keep all 140 species, bring in age_maturity where available
-forest_age <- forest_sp %>%
-  left_join(df, by = "species.name")
-
-# Check how many species did not get age_maturity info.
-missing_age <- forest_age %>%
-  filter(is.na(age_maturity))
-
-write.csv(
-  forest_age,
-  file = "I:\\DATA\\ForestSpecialist_withAgeMaturity.csv",
-  row.names = FALSE
-)
-write.csv(
-    missing_age,
-    file = "I:\\DATA\\ForestSpecialist_missingAgeMaturity.csv",
-    row.names = FALSE
-)
-
-# load missing species and check GBIF backbone
-missing_age <- read.csv(
-  "I:\\DATA\\ForestSpecialist_missingAgeMaturity.csv",
-  header = TRUE,
-  stringsAsFactors = FALSE
-)
-
-gbif_match <- name_backbone_checklist(
-  name_data = missing_age["species.name"],
-  kingdom = "Plantae",
-  verbose = TRUE
-)
-
-str(gbif_match)
-
-gbif_clean <- gbif_match %>%
-  filter(confidence >= 50) %>%   # conservative, you can relax to 80
-  mutate(
-    accepted_name = ifelse(
-      !is.na(acceptedUsageKey),
-      species,          # accepted species name
-      canonicalName     # already accepted
-    )
-  ) %>%
-  distinct(verbatim_name, accepted_name)
-
-colnames(gbif_match)
-
-
-## join back to missing_age to get accepted names and then age_maturity
-forest_age_fixed <- forest_age %>%
-  left_join(
-    gbif_clean,
-    by = c("species.name" = "verbatim_name")
-  ) %>%
-  mutate(
-    name_for_join = coalesce(accepted_name, species.name)
-  ) %>%
-  left_join(
-    df %>% select(species.name, age_maturity),
-    by = c("name_for_join" = "species.name"),
-    suffix = c("", "_from_long")
-  ) %>%
-  mutate(
-    age_maturity_final = coalesce(
-      suppressWarnings(as.numeric(age_maturity)),
-      suppressWarnings(as.numeric(age_maturity_from_long))
-    )
-  )
-sum(is.na(forest_age_fixed$age_maturity_final))
-str(forest_age_fixed)
-
-final_140 <- forest_age_fixed %>%
-  mutate(
-    age_maturity_final = suppressWarnings(as.numeric(age_maturity_final))
-    ) %>%
-  group_by(species.name) %>%
-  summarise(
-    age_maturity = mean(age_maturity_final, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  # mean(..., na.rm=TRUE) gives NaN if all values were NA -> convert to NA
-  mutate(
-    age_maturity = ifelse(is.nan(age_maturity), NA_real_, age_maturity)
-    ) %>%
-  select(species.name, age_maturity)
-final_missing <-final_140 %>% filter(is.na(age_maturity)) %>% arrange(species.name)
-
-# Average genus-level age of maturity for remaining missing species.
-# --- 2) Add genus to final_140 (from species name) ---
-final_140 <- final_140 %>%
-  mutate(genus = sub(" .*", "", species.name))
-head(final_140)
-# --- 3) Prepare long dataset: extract genus and ensure numeric ages ---
-df_long <- df %>%
-  mutate(
-    species.name = trimws(species.name),
-    genus = sub(" .*", "", species.name),
-    age_maturity_num = suppressWarnings(as.numeric(age_maturity))
-  )
-# --- 4) Compute genus-level mean age from long dataset ---
-genus_mean <- df_long %>%
-  filter(!is.na(age_maturity_num)) %>%
-  group_by(genus) %>%
-  summarise(genus_age_mean = mean(age_maturity_num), n_species = n(), .groups = "drop")
-
-# --- 5) Fill missing species ages using genus mean (if available) ---
-final_140_imputed <- final_140 %>%
-  left_join(genus_mean, by = "genus") %>%
-  mutate(
-    age_maturity_filled = ifelse(is.na(age_maturity), genus_age_mean, age_maturity)
-  ) %>%
-  select(species.name, age_maturity = age_maturity_filled)
-
-final_140_imputed <- final_140 %>%
-  left_join(genus_mean, by = "genus") %>%
-  mutate(
-    age_maturity = dplyr::coalesce(age_maturity, genus_age_mean)
-  ) %>%
-  select(species.name, age_maturity)
-
-# Check remaining missing
-nrow(final_140_imputed)                    # should be 140
-sum(is.na(final_140_imputed$age_maturity)) # how many still missing after genus fill?
-
-# Export final dataset with age of maturity as .xlsx (including genus-level imputations)
-library(writexl)
-
-write_xlsx(
-  final_140_imputed,
-  path = "I:\\DATA\\forest_species_age_maturity_140.xlsx"
-)
-
-# New data frame from TRY dataset for age of maturity.
-# Test if we can extract more precise values from this original TRY data.
 testdf <- read.delim(
   "I:\\DATA\\46884.txt",
   header = TRUE,
@@ -178,6 +22,7 @@ testdf <- read.delim(
   fill = TRUE
 )
 
+# Clean TRY data: extract only age of maturity related entries.
 age_df <- testdf %>%
   filter(
     TraitID == 155 |              # age of maturity
@@ -191,47 +36,206 @@ age_df <- age_df %>%
   )
 str(age_df)
 
-library(stringr)
-age_df_clean <- age_df %>%
-  mutate(
-    maturity_age = case_when(
-      # ranges like "2-3", "6-10"
-      str_detect(OrigValueStr, "-") ~ {
-        vals <- str_split(OrigValueStr, "-", simplify = TRUE)
-        rowMeans(apply(vals, 2, as.numeric), na.rm = TRUE)
-      },
-
-      # values with < or >
-      str_detect(OrigValueStr, "[<>]") ~ 
-        as.numeric(str_remove_all(OrigValueStr, "[<>]")),
-
-      # plain numeric values
-      TRUE ~ as.numeric(OrigValueStr)
-    )
-  )
-
-bad_vals <- age_df_clean %>%
-  filter(is.na(maturity_age)) %>%
-  distinct(OrigValueStr) %>%
-  arrange(OrigValueStr)
-
-bad_vals
-
 keep_sp <- forest_sp$species.name
 
-age_140 <- age_df_clean %>%
+age_140 <- age_df %>%
   mutate(
-    matched_species = case_when(
-      SpeciesName %in% keep_sp    ~ SpeciesName,
-      AccSpeciesName %in% keep_sp ~ AccSpeciesName,
-      TRUE                        ~ NA_character_
+    SpeciesName    = str_squish(SpeciesName),
+    AccSpeciesName = str_squish(AccSpeciesName)
+  ) %>%
+  pivot_longer(
+    cols = c(SpeciesName, AccSpeciesName),
+    names_to = "matched_from",
+    values_to = "matched_species"
+  ) %>%
+  filter(matched_species %in% keep_sp)
+
+age_140_clean <- age_140 %>%
+  filter(
+    !is.na(OrigValueStr),
+    str_trim(OrigValueStr) != ""
+  )
+age_140_clean <- age_140_clean %>%
+  select(matched_species, OrigValueStr, matched_from)
+
+# Based on species synonyms, we could probably match more species.
+# Use rgbif to check the synonyms and get accepted names.
+gbif_match <- name_backbone_checklist(
+  name_data = keep_sp,
+  kingdom = "Plantae",
+  verbose = TRUE
+)
+str(gbif_match)
+
+gbif_clean <- gbif_match %>%
+  filter(confidence >= 50) %>%   # conservative, you can relax to 80
+  mutate(
+    accepted_name = ifelse(
+      !is.na(acceptedUsageKey),
+      species,          # accepted species name
+      canonicalName     # already accepted
     )
   ) %>%
-  filter(!is.na(matched_species))
-unique(age_140$OrigValueStr)
+  distinct(verbatim_name, accepted_name)
+
+# gbif_clean has: verbatim_name, accepted_name
+gbif_lookup <- gbif_clean %>%
+  mutate(
+    verbatim_name = str_squish(verbatim_name),
+    accepted_name = str_squish(accepted_name)
+  ) %>%
+  pivot_longer(
+    cols = c(verbatim_name, accepted_name),
+    names_to = "name_type",
+    values_to = "name"
+  ) %>%
+  filter(!is.na(name), name != "") %>%
+  distinct(name)
+
+# Match age_df again.
+age_140_clean2 <- age_df %>%
+  mutate(
+    SpeciesName    = str_squish(SpeciesName),
+    AccSpeciesName = str_squish(AccSpeciesName),
+    OrigValueStr   = str_squish(OrigValueStr)
+  ) %>%
+  pivot_longer(
+    cols = c(SpeciesName, AccSpeciesName),
+    names_to = "matched_from",
+    values_to = "matched_species"
+  ) %>%
+  semi_join(gbif_lookup, by = c("matched_species" = "name")) %>%
+  filter(OrigValueStr != "") %>%                     # removes empty strings
+  select(matched_species, OrigValueStr, matched_from) # reorder columns
+
+age_140_merged <- bind_rows(
+  age_140_clean  = age_140_clean,
+  age_140_clean2 = age_140_clean2,
+  .id = "source_df"
+)
+unique(age_140_merged$OrigValueStr)
+
+write.xlsx(
+  age_140_merged,
+  file = "I:\\DATA\\age_140_clean_merged02.xlsx",
+  overwrite = TRUE
+)
+
+# Read in the manually cleaned age_140_merge data from TRY.
+age_140_merge_clean <-read_excel(
+  "I:\\DATA\\age_140_clean_merged02.xlsx",
+  sheet = 1,
+  col_names = TRUE
+)
+str(age_140_merge_clean)
+age_140_merge_clean <- age_140_merge_clean %>%
+  mutate(
+    OrigValueStr = as.numeric(OrigValueStr)
+  )
+
+# Remove columns of source_df and matched_from.
+age_140_merge_clean <- age_140_merge_clean %>%
+  select(
+    matched_species,
+    OrigValueStr
+  )
+
+# Group by species and get median age of maturity.
+age_140_final <- age_140_merge_clean %>%
+  group_by(matched_species) %>%
+  summarise(
+    OrigValueStr = median(OrigValueStr, na.rm = TRUE),
+    Comment = "Median",
+    .groups = "drop"
+  )
+
+# Merge with the forest species list to add the ages.
+forest_age <- forest_sp %>%
+  left_join(
+    age_140_final,
+    by = c("species.name" = "matched_species")
+  ) %>%
+  rename(
+    age_maturity_final = OrigValueStr
+  )
+
+# Check if forest species can find age of maturity by average genus-level age.
+age_missing <-forest_age %>% filter(is.na(age_maturity_final)) %>% arrange(species.name)
+
+# Average genus-level age of maturity for remaining missing species.
+# --- 2) Add genus to final_140 (from species name) ---
+age_missing <- age_missing %>%
+  mutate(genus = sub(" .*", "", species.name))
+head(age_missing)
+
+# Rename the columns.
+colnames(age_140_final) <- c(
+  "species.name",
+  "age_maturity",
+  "Source"
+)
+
+# --- 3) Prepare long dataset: extract genus and ensure numeric ages ---
+age_genus <- age_140_final %>%
+  mutate(
+    species.name = trimws(species.name),
+    genus = sub(" .*", "", species.name),
+    age_maturity_num = suppressWarnings(as.numeric(age_maturity))
+  )
+# --- 4) Compute genus-level mean age from long dataset ---
+genus_mean <- age_genus %>%
+  filter(!is.na(age_maturity_num)) %>%
+  group_by(genus) %>%
+  summarise(genus_age_mean = mean(age_maturity_num), n_species = n(), .groups = "drop")
+
+# --- 5) Fill missing species ages using genus mean (if available) ---
+age_missing_filled <- age_missing %>%
+  left_join(genus_mean, by = "genus") %>%
+  mutate(
+    age_maturity_genus = ifelse(
+      is.na(age_maturity_final),
+      genus_age_mean,
+      age_maturity_final
+    ),
+    Comment = ifelse(
+      is.na(Comment) & !is.na(genus_age_mean),
+      "Average genus",
+      Comment
+    )
+  ) %>%
+  select(-genus_age_mean, -n_species, -age_maturity_final)  # optional cleanup
+
+# Merge back to get the full dataset.
+forest_age_filled <- forest_age %>%
+  left_join(age_missing_filled %>% select(species.name, age_maturity_genus),
+    by = "species.name") %>%
+  mutate(
+    age_maturity_final = ifelse(
+      is.na(age_maturity_final),
+      age_maturity_genus,
+      age_maturity_final
+    ),
+    Comment = ifelse(
+      is.na(Comment ) & !is.na(age_maturity_genus),
+      "Average genus",
+      Comment
+    )
+  ) %>%
+  select(-age_maturity_genus)  # optional cleanup
+
+# Check remaining missing
+nrow(forest_age_filled)                    # should be 140
+sum(is.na(forest_age_filled$age_maturity_final)) # how many still missing after genus fill? 63
+
+# Export final dataset with age of maturity as .xlsx (including genus-level imputations)
+write.xlsx(
+  forest_age_filled,
+  file = "I:\\DATA\\forestSpecialist_age_maturity.xlsx",
+  overwrite = TRUE
+)
+
 
 ##### Match dispersal mode for each species.
-library(readxl)
 dispersal_mode <- read_excel(
   "I:\\DATA\\Lososova_et_al_2023_Dispersal_version2.xlsx",
   sheet = 1,
@@ -255,15 +259,15 @@ dispersal_mode_sel <- dispersal_mode %>%
   )
 
 
-forest_with_dispersal <- forest_sp %>%
+age_with_dispersal <- all_age %>%
   left_join(
     dispersal_mode_sel,
     by = c("species.name" = "Taxon")
   )
-sum(is.na(forest_with_dispersal$'Dispersal distance class (1-6)'))
+sum(is.na(age_with_dispersal$'Dispersal distance class (1-6)'))
 
 write.xlsx(
-  forest_with_dispersal,
+  age_with_dispersal,
   file = "I:/DATA/forest_with_maturity_dispersalClass.xlsx",
   overwrite = TRUE
 )

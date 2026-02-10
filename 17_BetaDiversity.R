@@ -14,6 +14,40 @@ fut <- list.files(
 )
 fut <- rast(fut)
 
+## Speedup the process.##
+dir.create("G:/terra_tmp", showWarnings = FALSE)
+dir.create("G:/beta_tmp", showWarnings = FALSE)
+
+src_to_species <- function(x) {
+  x <- basename(x)
+  x <- sub("\\.tif$", "", x, ignore.case = TRUE)
+  x <- sub("^binary[_ ]+", "", x, ignore.case = TRUE)
+  x <- sub("_CurrentActual$", "", x, ignore.case = TRUE)
+  x <- gsub("[[:space:]]+", "_", x)
+  x
+}
+
+
+names(cur) <- src_to_species(sources(cur))
+names(fut) <- src_to_species(sources(fut))
+
+if (!setequal(names(cur), names(fut))) stop("Species sets differ.")
+fut <- fut[[names(cur)]]
+stopifnot(identical(names(cur), names(fut)))
+
+# Convert float to byte
+cur_file <- "G:/beta_tmp/curActualBinary_140_INT1U.tif"
+fut_file <- "G:/beta_tmp/futTestBinary_140_INT1U.tif"
+
+writeRaster(cur, cur_file, overwrite = TRUE,
+            wopt = list(datatype = "INT1U"),
+            gdal = c("TILED=YES", "COMPRESS=LZW", "PREDICTOR=2", "BIGTIFF=YES"))
+
+writeRaster(fut, fut_file, overwrite = TRUE,
+            wopt = list(datatype = "INT1U"),
+            gdal = c("TILED=YES", "COMPRESS=LZW", "PREDICTOR=2", "BIGTIFF=YES"))
+
+
 # Check if species are in the same order in both raster stacks.
 names(cur)[[130]]
 names(fut)[[130]]
