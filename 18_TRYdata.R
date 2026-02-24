@@ -244,7 +244,7 @@ dispersal_mode <- read_excel(
 str(dispersal_mode)
 
 forest_sp <- read_excel(
-  "I:\\DATA\\forest_species_age_maturity_140.xlsx",
+  "I:\\DATA\\forestSpecialist_age_maturity.xlsx",
   sheet = 1,
   col_names = TRUE
 )
@@ -259,7 +259,7 @@ dispersal_mode_sel <- dispersal_mode %>%
   )
 
 
-age_with_dispersal <- all_age %>%
+age_with_dispersal <- forest_sp %>%
   left_join(
     dispersal_mode_sel,
     by = c("species.name" = "Taxon")

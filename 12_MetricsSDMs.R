@@ -226,4 +226,7 @@ write.csv(metrics,
 
 # Read the metrics summary.
 metrics_current <- read.csv("I:/DATA/SDM_current/results/CurrentSDMs_Metrics_Summary.csv")
-metrics_future <- read.csv("I:/DATA/SDM_future/FutureSDMs_Metrics_Summary.csv")
+hist(metrics_current$CBI, main = "CBI Distribution for Current SDMs", xlab = "CBI", breaks = 20)
+min(metrics_current$CBI, na.rm = TRUE) # 0.575
+max(metrics_current$CBI, na.rm = TRUE) # 1
+metrics_future <- read.csv("I:/DATA/SDM_future/FutureSDMs_Metrics_Summary.csv") # We don't need model evaluation metrics for future projections, but we can still read it if needed.

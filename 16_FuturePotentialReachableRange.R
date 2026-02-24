@@ -5,27 +5,32 @@ library(readxl)
 shp_dir <- "I:/DATA/output/ConvexHull"
 out_dir <- "I:/DATA/output/ConvexHull_Buffer"
 dispersal_df <- read_excel(
-    "I:\\DATA\\forestSpecialist_Maturity_DispersalRate.xlsx"
+    "I:\\DATA\\forest_with_maturity_dispersalClass.xlsx"
 )
-plot(dispersal_df$'Dispersal rate(m/year)')
+plot(dispersal_df$'Dispersal rate (m/year)')
 # 2. List shapefiles
 shp_lst <- list.files(
     shp_dir,
     pattern = "_ConvexHull\\.shp$",
     full.names = TRUE
 )
-min(dispersal_df$'Dispersal rate(m/year)', na.rm = TRUE)
-anyNA(dispersal_df$'Dispersal rate(m/year)')
+dispersal_df$'Dispersal rate (m/year)' <- round(dispersal_df$'Dispersal rate (m/year)', digits = 2)
+min(dispersal_df$'Dispersal rate (m/year)', na.rm = TRUE)
+anyNA(dispersal_df$'Dispersal rate (m/year)')
 shp <- shp_lst[46]
 for (shp in shp_lst) {
     species <- sub("_ConvexHull\\.shp$", "", basename(shp))
     species <- gsub("_", " ", species)
     cat("• Processing", species, "...\n")
     conh_poly <- vect(shp)
+    # conh_poly <- vect(
+    #     "I:/DATA/output/ConvexHull/Clinopodium_menthifolium_subsp._menthifolium_ConvexHull.shp"
+    #     )  # if using sf instead of terra
     t_year <- 75
     # extract dispersal rate for this species
-    dispersal_rate <- dispersal_df$'Dispersal rate(m/year)'[
-        dispersal_df$species.name == species
+    dispersal_rate <- dispersal_df$'Dispersal rate (m/year)'[
+        dispersal_df$species_name == species 
+        #dispersal_df$species_name == "Clinopodium menthifolium subsp  menthifolium"
     ]
     dispersal_rate <- round(dispersal_rate, digits = 2)
 

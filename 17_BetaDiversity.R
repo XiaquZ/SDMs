@@ -1,22 +1,22 @@
 library(terra)
 ## Raw data and plotting
 cur <- list.files(
-  path = "G:/SDMs/SDMs_current/Results/Binary_SpeciesCurrentAtualDistri/",
+  path = "I:\\SDM_betaDiver\\Binary_be_CurrentActu\\",
   pattern = "\\.tif$",
   full.names = TRUE
 )
 cur <- rast(cur)
 
 fut <- list.files(
-  path = "G:/SDMs/SDMs_future/Results/BinaryMaps_original/",
+  path = "I:\\SDM_betaDiver\\Binary_be_FutureReacha\\",
   pattern = "\\.tif$",
   full.names = TRUE
 )
 fut <- rast(fut)
 
 ## Speedup the process.##
-dir.create("G:/terra_tmp", showWarnings = FALSE)
-dir.create("G:/beta_tmp", showWarnings = FALSE)
+dir.create("D:/PhD/Data/terra_tmp", showWarnings = FALSE)
+dir.create("D:/PhD/Data/beta_tmp", showWarnings = FALSE)
 
 src_to_species <- function(x) {
   x <- basename(x)
@@ -36,8 +36,8 @@ fut <- fut[[names(cur)]]
 stopifnot(identical(names(cur), names(fut)))
 
 # Convert float to byte
-cur_file <- "G:/beta_tmp/curActualBinary_140_INT1U.tif"
-fut_file <- "G:/beta_tmp/futTestBinary_140_INT1U.tif"
+cur_file <- "D:/PhD/Data/beta_tmp/curActualBinary_140_INT1U.tif"
+fut_file <- "D:/PhD/Data/beta_tmp/futTestBinary_140_INT1U.tif"
 
 writeRaster(cur, cur_file, overwrite = TRUE,
             wopt = list(datatype = "INT1U"),
@@ -49,8 +49,8 @@ writeRaster(fut, fut_file, overwrite = TRUE,
 
 
 # Check if species are in the same order in both raster stacks.
-names(cur)[[130]]
-names(fut)[[130]]
+names(cur)[[1]]
+names(fut)[[1]]
 if (!identical(names(cur), names(fut))) {
   stop("Layer names of current and future stacks do not match exactly.")
 }
