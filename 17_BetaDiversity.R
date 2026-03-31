@@ -1,18 +1,58 @@
 library(terra)
-## Raw data and plotting
-cur <- list.files(
-  path = "I:\\SDM_betaDiver\\Binary_be_CurrentActu\\",
-  pattern = "\\.tif$",
-  full.names = TRUE
-)
-cur <- rast(cur)
+# ---- inputs ----
+cur_dir <- "I:/DATA/SDM_current/results/Binary_SpeciesCurrentAtualDistri_be/"
+fut_dir <- "I:/DATA/SDM_future/Binary_SpeciesFutReachable_be_test/"
+out_dir <- "I:/DATA/beta_temp"
+cores   <- 3
 
-fut <- list.files(
-  path = "I:\\SDM_betaDiver\\Binary_be_FutureReacha\\",
-  pattern = "\\.tif$",
-  full.names = TRUE
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+#dir.create(tmpdir,  recursive = TRUE, showWarnings = FALSE)
+
+terraOptions(memfrac = 0.8, progress = 10)
+Sys.setenv(GDAL_NUM_THREADS = "1")
+
+# ---- files ----
+cur_files <- list.files(cur_dir, pattern = "\\.tif$", full.names = TRUE)
+fut_files <- list.files(fut_dir, pattern = "\\.tif$", full.names = TRUE)
+
+# ---- load stacks ----
+C <- rast(cur_files)
+F <- rast(fut_files)
+
+# ---- richness function ----
+rich_fun <- function(v) {
+  # If entire pixel is NA (non-forest)
+  if (all(is.na(v))) return(NA_real_)
+  
+  # Otherwise count presences
+  sum(v == 1, na.rm = TRUE)
+}
+
+# ---- current richness ----
+rich_cur <- app(
+  C, rich_fun,
+  cores = cores,
+  filename = file.path(out_dir, "richness_current.tif"),
+  overwrite = TRUE,
+  wopt = list(
+    datatype = "INT2U",
+    gdal = c("COMPRESS=LZW", "TILED=YES", "BIGTIFF=IF_SAFER")
+  )
 )
-fut <- rast(fut)
+
+# ---- future richness ----
+rich_fut <- app(
+  F, rich_fun,
+  cores = cores,
+  filename = file.path(out_dir, "richness_future.tif"),
+  overwrite = TRUE,
+  wopt = list(
+    datatype = "INT2U",
+    gdal = c("COMPRESS=LZW", "TILED=YES", "BIGTIFF=IF_SAFER")
+  )
+)
+
+
 
 ## Speedup the process.##
 dir.create("D:/PhD/Data/terra_tmp", showWarnings = FALSE)
@@ -70,11 +110,3 @@ terraOptions(memfrac = 0.6, progress = 1)  # adjust memfrac if needed
 a <- sum(cur == 1 & fut == 1)              # persisted
 b <- sum(cur == 1 & fut == 0)              # losses
 c <- sum(cur == 0 & fut == 1)              # gains
-
-## Temporal beta diversity maps
-den_jac <- a + b + c
-beta_jac <- (b + c) / den_jac
-beta_jac <- classify(beta_jac, rcl = matrix(c(-Inf,0,NA), ncol=3, byrow=TRUE))  # optional: NA where den=0
-
-beta_sor <- (b + c) / (2*a + b + c)
-beta_sor <- classify(beta_sor, rcl = matrix(c(-Inf,0,NA), ncol=3, byrow=TRUE))  # optional

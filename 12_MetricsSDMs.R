@@ -139,7 +139,7 @@ pred_ras <- rast(pred_file)
 occs_probs <- terra::extract(pred_ras, internal, ID = FALSE)
 or.10p.avg <- as.numeric(quantile(occs_probs, probs = 0.1, na.rm = TRUE))
 
- # Produce binary maps
+ # Produce binary maps (method 1: Below use ifel for more efficient processing)
 # binary_ras <- pred_ras
 # binary_ras[binary_ras <= or.10p.avg] <- 0
 # binary_ras[binary_ras > or.10p.avg] <- 1

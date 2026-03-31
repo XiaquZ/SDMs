@@ -17,7 +17,7 @@ shp_lst <- list.files(
 dispersal_df$'Dispersal rate (m/year)' <- round(dispersal_df$'Dispersal rate (m/year)', digits = 2)
 min(dispersal_df$'Dispersal rate (m/year)', na.rm = TRUE)
 anyNA(dispersal_df$'Dispersal rate (m/year)')
-shp <- shp_lst[46]
+shp <- shp_lst[40]
 for (shp in shp_lst) {
     species <- sub("_ConvexHull\\.shp$", "", basename(shp))
     species <- gsub("_", " ", species)
@@ -29,8 +29,8 @@ for (shp in shp_lst) {
     t_year <- 75
     # extract dispersal rate for this species
     dispersal_rate <- dispersal_df$'Dispersal rate (m/year)'[
-        dispersal_df$species_name == species 
-        #dispersal_df$species_name == "Clinopodium menthifolium subsp  menthifolium"
+        #dispersal_df$species_name == species 
+        dispersal_df$species_name == "Clinopodium menthifolium subsp  menthifolium"
     ]
     dispersal_rate <- round(dispersal_rate, digits = 2)
 
