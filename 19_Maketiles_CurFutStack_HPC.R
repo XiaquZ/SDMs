@@ -3,15 +3,36 @@ library(sf)
 
 terraOptions(memfrac = 0.8, progress = 1, threads = 1)
 
-eu_shape <- read_sf("/lustre1/scratch/348/vsc34871/EUshap/Europe.shp")
+eu_shape <- read_sf("I:/EUshap/Europe.shp")
 eu_shape <- st_buffer(eu_shape, 1)
 
-cellsize <- 9e5   # 900 km
+cellsize <- 6e5   # 600 km
 grid <- st_make_grid(eu_shape, cellsize = c(cellsize, cellsize)) |>
   st_as_sf()
 
 grid_vect <- vect(grid)
 
+# Tile inspections.
+# # add tile IDs
+# grid$tile_id <- seq_len(nrow(grid))
+
+# # convert to terra vector for plotting if you want
+# grid_vect <- vect(grid)
+
+# # plot
+# plot(st_geometry(eu_shape), border = "blue", main = "EU Shape with Grid Overlay")
+# plot(grid_vect, add = TRUE, border = "red")
+# # get centroids for label positions
+# cent <- st_centroid(grid)
+
+# # add tile ID labels
+# text(
+#   x = st_coordinates(cent)[, 1],
+#   y = st_coordinates(cent)[, 2],
+#   labels = grid$tile_id,
+#   cex = 0.7,
+#   col = "black"
+# )
 # -----------------------------
 # Load raster files
 # -----------------------------
