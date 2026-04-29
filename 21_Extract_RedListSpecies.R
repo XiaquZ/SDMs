@@ -34,6 +34,7 @@ species_list <- species_list[!is.na(species_list) & species_list != ""]
 # Optional: remove duplicates
 species_list <- unique(species_list)
 
+
 # -----------------------------
 # 3. List all .tif files in folder
 # -----------------------------
