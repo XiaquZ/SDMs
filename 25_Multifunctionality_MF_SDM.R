@@ -4,10 +4,10 @@ library(terra)
 # 1. Input files
 # ------------------------------------------------------------
 
-mi_beta_file <- "/lustre1/scratch/348/vsc34871/output/MicrorefugiaIndex_140species/MI_EU_beta_1_minus_beta.tif"
-mi_rich_file <- "/lustre1/scratch/348/vsc34871/output/MicrorefugiaIndex_140species/EU_richness_ratio_MI.tif"
+mi_beta_file <- "/lustre1/scratch/348/vsc34871/output/MicrorefugiaIndex_RedList/MI_EU_RedList_beta_1_minus_beta.tif"
+mi_rich_file <- "/lustre1/scratch/348/vsc34871/output/MicrorefugiaIndex_RedList/EU_richness_ratio_RedList_MI.tif"
 
-out_dir <- "/lustre1/scratch/348/vsc34871/output/MF_SDMs/"
+out_dir <- "/lustre1/scratch/348/vsc34871/output/MF_SDMs_RedList/"
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # ------------------------------------------------------------
@@ -80,7 +80,7 @@ wopt_int <- list(
 mf_average <- mean(
   mi_stack,
   na.rm = FALSE,
-  filename = file.path(out_dir, "MF_average_4MIs.tif"),
+  filename = file.path(out_dir, "MF_average_4MIs_RedList.tif"),
   overwrite = TRUE,
   wopt = wopt_float
 )
@@ -97,7 +97,7 @@ mf_threshold_08 <- (mi_stack > 0.8)
 mf_threshold_08 <- sum(
   mf_threshold_08,
   na.rm = FALSE,
-  filename = file.path(out_dir, "MF_threshold_count_08_4MIs.tif"),
+  filename = file.path(out_dir, "MF_threshold_count_08_4MIs_RedList.tif"),
   overwrite = TRUE,
   wopt = wopt_int
 )
@@ -105,7 +105,6 @@ mf_threshold_08 <- sum(
 names(mf_threshold_08) <- "MF_threshold_count_08"
 
 print(mf_threshold_08)
-print(global(mf_threshold_08, c("min", "max"), na.rm = TRUE))
 
 # ------------------------------------------------------------
 # 8. Single-threshold approach: threshold = 0.6
@@ -115,7 +114,7 @@ mf_threshold_06 <- (mi_stack > 0.6)
 mf_threshold_06 <- sum(
   mf_threshold_06,
   na.rm = FALSE,
-  filename = file.path(out_dir, "MF_threshold_count_06_4MIs.tif"),
+  filename = file.path(out_dir, "MF_threshold_count_06_4MIs_RedList.tif"),
   overwrite = TRUE,
   wopt = wopt_int
 )
@@ -123,4 +122,3 @@ mf_threshold_06 <- sum(
 names(mf_threshold_06) <- "MF_threshold_count_06"
 
 print(mf_threshold_06)
-print(global(mf_threshold_06, c("min", "max"), na.rm = TRUE))

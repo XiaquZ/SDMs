@@ -76,13 +76,13 @@ writeRaster(
 #### Microrefugia index. ####
 #############################
 ## Beta diversity
-beta_mi <- rast("N:/SDMs/")
+beta_mi <- rast("N:/SDMs/MicrorefugiaIndex_SDM_RedList/MI_EU_RedList_beta_1_minus_beta.tif")
 
-names(beta_raster) <- c("beta_sor", "beta_sim", "beta_nes")
+names(beta_mi) <- c("beta_sor", "beta_sim", "beta_nes")
 
 writeRaster(
-  beta_raster[[1]],
-  "N:/SDMs/Merge_beta_RedList/EU_redlist_beta_sorensen.tif",
+  beta_mi[[1]],
+  "N:/SDMs/MicrorefugiaIndex_SDM_RedList/MI_EU_redlist_beta_sorensen.tif",
   overwrite = TRUE,
   wopt = list(
     datatype = "FLT4S",
@@ -91,8 +91,8 @@ writeRaster(
 )
 
 writeRaster(
-  beta_raster[[2]],
-  "N:/SDMs/Merge_beta_RedList/EU_redlist_beta_simpson_turnover.tif",
+  beta_mi[[2]],
+  "N:/SDMs/MicrorefugiaIndex_SDM_RedList/MI_EU_redlist_beta_simpson_turnover.tif",
   overwrite = TRUE,
   wopt = list(
     datatype = "FLT4S",
@@ -101,8 +101,8 @@ writeRaster(
 )
 
 writeRaster(
-  beta_raster[[3]],
-  "N:/SDMs/Merge_beta_RedList/EU_redlist_beta_nestedness_loss.tif",
+  beta_mi[[3]],
+  "N:/SDMs/MicrorefugiaIndex_SDM_RedList/MI_EU_redlist_beta_nestedness_loss.tif",
   overwrite = TRUE,
   wopt = list(
     datatype = "FLT4S",
