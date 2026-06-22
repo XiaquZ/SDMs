@@ -14,7 +14,7 @@ Sys.setenv(
   OMP_NUM_THREADS  = "1"
 )
 
-# #### Microrefugia Index based on beta diversity for forest specialist species. ####
+# #### Microrefugia Index based on beta diversity for all selected species. ####
 # # ---------------------------------------------------------
 # # Input / output paths
 # # ---------------------------------------------------------
